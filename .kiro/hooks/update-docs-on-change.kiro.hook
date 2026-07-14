@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Update Docs on Source Change",
+  "description": "When source files (TypeScript, React, config files) are edited, asks the agent to update the README or docs folder to reflect the changes.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx",
+      "*.json",
+      "*.yml",
+      "*.yaml",
+      "Dockerfile",
+      "docker-compose*.yml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A source file was just edited. Review the change and determine if the README.md or any files in the /docs folder need to be updated to reflect this change. If so, make the appropriate documentation updates to keep docs in sync with the code. Focus on API changes, new features, configuration changes, architecture changes, or setup instructions that may be affected."
+  }
+}

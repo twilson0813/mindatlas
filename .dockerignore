@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output (built inside container)
+dist/
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# Test and coverage
+coverage/
+vitest.config*.ts
+
+# Development configs
+.prettierrc
+.prettierignore
+eslint.config.mjs
+docker-compose.yml
+
+# Logs
+*.log
+
+# Kiro specs
+.kiro/
+
+# OS files
+.DS_Store
+Thumbs.db
