@@ -7,6 +7,7 @@ import { MetricsDashboard } from './pages/MetricsDashboard';
 import { PlanManagement } from './pages/PlanManagement';
 import { ModerationPanel } from './pages/ModerationPanel';
 import { AuditTrail } from './pages/AuditTrail';
+import PlatformCredentials from './pages/PlatformCredentials';
 import './styles/admin.css';
 
 /**
@@ -24,6 +25,7 @@ export function AdminApp() {
             <Route path="/users" element={<UserManagement />} />
             <Route path="/metrics" element={<MetricsDashboard />} />
             <Route path="/plans" element={<PlanManagement />} />
+            <Route path="/credentials" element={<PlatformCredentials />} />
             <Route path="/moderation" element={<ModerationPanel />} />
             <Route path="/audit" element={<AuditTrail />} />
             <Route path="*" element={<Navigate to="/users" replace />} />

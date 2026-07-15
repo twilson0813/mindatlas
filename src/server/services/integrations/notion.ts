@@ -1,33 +1,18 @@
 import { Client } from '@notionhq/client';
-import { query, queryOne } from '../../db/db.js';
-import { encrypt, decrypt } from '../../utils/encryption.js';
+import { getUserIntegration, setUserIntegration, deleteUserIntegration, getPlatformCredentials } from '../credentials/index.js';
 import { createItem, getItem } from '../items/index.js';
-import { config } from '../../config.js';
 import { createChildLogger } from '../../logger.js';
 import type { Item } from '../items/index.js';
 
 const log = createChildLogger({ module: 'notion-integration' });
 
 /**
- * Notion connection row stored in the database.
- */
-export interface NotionConnectionRow {
-  id: string;
-  user_id: string;
-  access_token_encrypted: string;
-  workspace_id: string;
-  workspace_name: string | null;
-  connected_at: Date;
-}
-
-/**
  * Public representation of a Notion connection (no token exposed).
  */
 export interface NotionConnection {
-  id: string;
   workspace_id: string;
   workspace_name: string | null;
-  connected_at: Date;
+  connected_at: string | null;
 }
 
 /**
@@ -39,6 +24,16 @@ export interface NotionOAuthTokenResponse {
   workspace_name: string;
   bot_id: string;
   token_type: string;
+}
+
+/**
+ * Notion OAuth platform credentials shape.
+ * Stored in platform_credentials with provider "notion_oauth".
+ */
+export interface NotionOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
 }
 
 /**
@@ -59,9 +54,9 @@ export interface NotionExportResult {
 
 /**
  * Exchange an OAuth authorization code with Notion for an access token.
- * Encrypts the access token and stores the connection in the database.
+ * Stores the connection via the credential store service.
  *
- * Requirements: 9.3
+ * Requirements: 9.3, 5.3
  *
  * @param userId - The authenticated user establishing the connection
  * @param code - The OAuth authorization code from Notion
@@ -73,35 +68,16 @@ export async function connectNotion(userId: string, code: string): Promise<Notio
     throw error;
   }
 
-  if (!config.notionClientId || !config.notionClientSecret) {
-    const error = new Error('Notion integration is not configured') as Error & { statusCode?: number };
-    error.statusCode = 503;
-    throw error;
-  }
-
   // Exchange the authorization code for an access token
   const tokenResponse = await exchangeCodeForToken(code);
 
-  // Encrypt the access token before storing
-  const accessTokenEncrypted = encrypt(tokenResponse.access_token);
-
-  // Upsert the connection (one connection per user)
-  const row = await queryOne<NotionConnectionRow>(
-    `INSERT INTO notion_connections (user_id, access_token_encrypted, workspace_id, workspace_name)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (user_id)
-     DO UPDATE SET
-       access_token_encrypted = EXCLUDED.access_token_encrypted,
-       workspace_id = EXCLUDED.workspace_id,
-       workspace_name = EXCLUDED.workspace_name,
-       connected_at = NOW()
-     RETURNING id, user_id, access_token_encrypted, workspace_id, workspace_name, connected_at`,
-    [userId, accessTokenEncrypted, tokenResponse.workspace_id, tokenResponse.workspace_name]
+  // Store credentials and metadata via the credential store
+  await setUserIntegration(
+    userId,
+    'notion',
+    { accessToken: tokenResponse.access_token },
+    { workspace_id: tokenResponse.workspace_id, workspace_name: tokenResponse.workspace_name }
   );
-
-  if (!row) {
-    throw new Error('Failed to store Notion connection');
-  }
 
   log.info(
     { userId, workspaceId: tokenResponse.workspace_id },
@@ -109,10 +85,9 @@ export async function connectNotion(userId: string, code: string): Promise<Notio
   );
 
   return {
-    id: row.id,
-    workspace_id: row.workspace_id,
-    workspace_name: row.workspace_name,
-    connected_at: row.connected_at,
+    workspace_id: tokenResponse.workspace_id,
+    workspace_name: tokenResponse.workspace_name,
+    connected_at: new Date().toISOString(),
   };
 }
 
@@ -199,9 +174,7 @@ export async function exportToNotion(
   }
 
   const client = await getNotionClient(userId);
-  const connection = await getConnection(userId);
 
-  // Get the connected workspace's root page (use workspace_id as parent)
   const createdPageIds: string[] = [];
 
   for (const itemId of itemIds) {
@@ -259,24 +232,20 @@ export async function exportToNotion(
  * Get the Notion connection for a user, or throw if not connected.
  */
 export async function getConnection(userId: string): Promise<NotionConnection> {
-  const row = await queryOne<NotionConnectionRow>(
-    `SELECT id, user_id, access_token_encrypted, workspace_id, workspace_name, connected_at
-     FROM notion_connections
-     WHERE user_id = $1`,
-    [userId]
-  );
+  const integration = await getUserIntegration(userId, 'notion');
 
-  if (!row) {
+  if (!integration) {
     const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
     error.statusCode = 404;
     throw error;
   }
 
+  const { metadata } = integration;
+
   return {
-    id: row.id,
-    workspace_id: row.workspace_id,
-    workspace_name: row.workspace_name,
-    connected_at: row.connected_at,
+    workspace_id: (metadata?.workspace_id as string) || '',
+    workspace_name: (metadata?.workspace_name as string) || null,
+    connected_at: (metadata?.connected_at as string) || null,
   };
 }
 
@@ -284,17 +253,15 @@ export async function getConnection(userId: string): Promise<NotionConnection> {
  * Disconnect Notion by removing the stored connection.
  */
 export async function disconnectNotion(userId: string): Promise<void> {
-  const result = await query(
-    `DELETE FROM notion_connections WHERE user_id = $1`,
-    [userId]
-  );
+  const integration = await getUserIntegration(userId, 'notion');
 
-  if (result.rowCount === 0) {
+  if (!integration) {
     const error = new Error('No Notion connection found') as Error & { statusCode?: number };
     error.statusCode = 404;
     throw error;
   }
 
+  await deleteUserIntegration(userId, 'notion');
   log.info({ userId }, 'Notion workspace disconnected');
 }
 
@@ -302,11 +269,20 @@ export async function disconnectNotion(userId: string): Promise<void> {
 
 /**
  * Exchange an OAuth authorization code for an access token with Notion's API.
- * Uses Basic auth with client_id:client_secret.
+ * Retrieves Notion OAuth client credentials from platform_credentials table.
  */
 async function exchangeCodeForToken(code: string): Promise<NotionOAuthTokenResponse> {
+  let notionOAuth: NotionOAuthConfig;
+  try {
+    notionOAuth = await getPlatformCredentials('notion_oauth' as any) as unknown as NotionOAuthConfig;
+  } catch {
+    const error = new Error('Notion integration is not configured') as Error & { statusCode?: number };
+    error.statusCode = 503;
+    throw error;
+  }
+
   const credentials = Buffer.from(
-    `${config.notionClientId}:${config.notionClientSecret}`
+    `${notionOAuth.clientId}:${notionOAuth.clientSecret}`
   ).toString('base64');
 
   const response = await fetch('https://api.notion.com/v1/oauth/token', {
@@ -319,7 +295,7 @@ async function exchangeCodeForToken(code: string): Promise<NotionOAuthTokenRespo
     body: JSON.stringify({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: config.notionRedirectUri,
+      redirect_uri: notionOAuth.redirectUri,
     }),
   });
 
@@ -337,25 +313,20 @@ async function exchangeCodeForToken(code: string): Promise<NotionOAuthTokenRespo
 
 /**
  * Get an authenticated Notion client for a user.
- * Decrypts the stored access token and creates a client instance.
+ * Retrieves decrypted access token from the credential store.
  */
 async function getNotionClient(userId: string): Promise<Client> {
-  const row = await queryOne<NotionConnectionRow>(
-    `SELECT id, user_id, access_token_encrypted, workspace_id, workspace_name, connected_at
-     FROM notion_connections
-     WHERE user_id = $1`,
-    [userId]
-  );
+  const integration = await getUserIntegration(userId, 'notion');
 
-  if (!row) {
+  if (!integration) {
     const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
     error.statusCode = 404;
     throw error;
   }
 
-  const accessToken = decrypt(row.access_token_encrypted);
+  const { credentials } = integration;
 
-  return new Client({ auth: accessToken });
+  return new Client({ auth: credentials.accessToken });
 }
 
 /**

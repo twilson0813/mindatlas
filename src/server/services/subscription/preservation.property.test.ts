@@ -41,6 +41,13 @@ vi.mock('../../config.js', () => ({
   },
 }));
 
+vi.mock('../credentials/index.js', () => ({
+  getStripeCredentials: vi.fn().mockResolvedValue({
+    secretKey: 'sk_test_fake',
+    webhookSecret: 'whsec_test_fake',
+  }),
+}));
+
 import { queryOne } from '../../db/db.js';
 
 const mockQueryOne = vi.mocked(queryOne);

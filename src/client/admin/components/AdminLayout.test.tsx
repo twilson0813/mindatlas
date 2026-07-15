@@ -32,6 +32,7 @@ describe('AdminLayout', () => {
     expect(nav).toHaveTextContent('Users');
     expect(nav).toHaveTextContent('Metrics');
     expect(nav).toHaveTextContent('Plans');
+    expect(nav).toHaveTextContent('Credentials');
     expect(nav).toHaveTextContent('Moderation');
     expect(nav).toHaveTextContent('Audit Log');
   });

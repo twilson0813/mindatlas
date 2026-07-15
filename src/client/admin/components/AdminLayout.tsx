@@ -5,12 +5,13 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-type AdminSection = 'users' | 'metrics' | 'plans' | 'moderation' | 'audit';
+type AdminSection = 'users' | 'metrics' | 'plans' | 'moderation' | 'audit' | 'credentials';
 
 const NAV_ITEMS: { key: AdminSection; label: string; icon: string; path: string }[] = [
   { key: 'users', label: 'Users', icon: '👤', path: '/users' },
   { key: 'metrics', label: 'Metrics', icon: '📊', path: '/metrics' },
   { key: 'plans', label: 'Plans', icon: '💳', path: '/plans' },
+  { key: 'credentials', label: 'Credentials', icon: '🔑', path: '/credentials' },
   { key: 'moderation', label: 'Moderation', icon: '🛡️', path: '/moderation' },
   { key: 'audit', label: 'Audit Log', icon: '📋', path: '/audit' },
 ];

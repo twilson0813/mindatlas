@@ -96,7 +96,7 @@ function mapPlanRow(row: PlanRow): SubscriptionPlan {
 /**
  * Records an admin action in the audit log.
  */
-async function logAuditEntry(
+export async function logAuditEntry(
   adminId: string,
   action: string,
   targetType: string,

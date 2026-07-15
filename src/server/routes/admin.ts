@@ -6,6 +6,7 @@ import { requireAdmin, requirePermission, type AdminAuthenticatedRequest } from 
 import { queryOne, query } from '../db/db.js';
 import { createChildLogger } from '../logger.js';
 import * as adminService from '../services/admin/index.js';
+import { setPlatformCredentials, type PlatformProviderMap } from '../services/credentials/index.js';
 import path from 'path';
 
 const logger = createChildLogger({ module: 'adminRoutes' });
@@ -516,6 +517,112 @@ router.post('/moderate/:userId', requirePermission('moderation.write'), async (r
     res.status(200).json({ message: `Moderation action '${action}' applied successfully` });
   } catch (error) {
     logger.error({ error, userId: req.params.userId }, 'Error moderating account');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── Platform Credentials ────────────────────────────────────────────────────
+
+/**
+ * Validates the request payload for a given platform credential provider.
+ * Returns { valid: true } if payload is correct, or { valid: false, error: string } otherwise.
+ */
+function validateProviderPayload(
+  provider: string,
+  body: Record<string, unknown>
+): { valid: boolean; error?: string } {
+  switch (provider) {
+    case 'openai':
+      if (!body.apiKey || typeof body.apiKey !== 'string') {
+        return { valid: false, error: 'apiKey is required and must be a string' };
+      }
+      return { valid: true };
+    case 'twilio':
+      if (!body.accountSid || !body.authToken || !body.phoneNumber) {
+        return { valid: false, error: 'accountSid, authToken, and phoneNumber are required' };
+      }
+      if (typeof body.accountSid !== 'string' || typeof body.authToken !== 'string' || typeof body.phoneNumber !== 'string') {
+        return { valid: false, error: 'accountSid, authToken, and phoneNumber must be strings' };
+      }
+      return { valid: true };
+    case 'stripe':
+      if (!body.secretKey || !body.webhookSecret) {
+        return { valid: false, error: 'secretKey and webhookSecret are required' };
+      }
+      if (typeof body.secretKey !== 'string' || typeof body.webhookSecret !== 'string') {
+        return { valid: false, error: 'secretKey and webhookSecret must be strings' };
+      }
+      return { valid: true };
+    default:
+      return { valid: false, error: 'Unknown provider' };
+  }
+}
+
+/**
+ * POST /api/admin/credentials/:provider
+ * Upserts credentials for a platform provider.
+ * Requirements: 2.6, 8.1, 8.2, 8.3, 9.1, 9.2, 9.3, 9.4
+ */
+router.post('/credentials/:provider', requirePermission('entitlements.manage'), async (req: Request, res: Response) => {
+  const adminReq = req as AdminAuthenticatedRequest;
+  const provider = req.params.provider as string;
+
+  const validProviders = ['openai', 'twilio', 'stripe'];
+  if (!validProviders.includes(provider)) {
+    res.status(400).json({ error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` });
+    return;
+  }
+
+  // Validate required fields per provider
+  const validation = validateProviderPayload(provider, req.body);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+
+  try {
+    await setPlatformCredentials(
+      provider as keyof PlatformProviderMap,
+      req.body
+    );
+
+    // Audit log
+    await adminService.logAuditEntry(adminReq.adminUser.id, 'credentials.update', 'platform_credentials', provider, {
+      provider,
+      fieldsUpdated: Object.keys(req.body),
+    });
+
+    res.status(200).json({ message: `Credentials for ${provider} saved successfully` });
+  } catch (error) {
+    logger.error({ error, provider }, 'Error updating platform credentials');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/admin/credentials/status
+ * Returns configuration status for all platform providers (without revealing values).
+ * Requirements: 2.6, 9.1, 9.2, 9.3, 9.4
+ */
+router.get('/credentials/status', requirePermission('entitlements.manage'), async (_req: Request, res: Response) => {
+  try {
+    const providers = ['openai', 'twilio', 'stripe'];
+    const status: Record<string, { configured: boolean; updatedAt: string | null }> = {};
+
+    for (const provider of providers) {
+      const row = await queryOne<{ updated_at: Date }>(
+        'SELECT updated_at FROM platform_credentials WHERE provider = $1',
+        [provider]
+      );
+      status[provider] = {
+        configured: !!row,
+        updatedAt: row?.updated_at?.toISOString() ?? null,
+      };
+    }
+
+    res.status(200).json({ providers: status });
+  } catch (error) {
+    logger.error({ error }, 'Error fetching credential status');
     res.status(500).json({ error: 'Internal server error' });
   }
 });

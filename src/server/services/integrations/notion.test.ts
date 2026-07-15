@@ -23,29 +23,16 @@ vi.mock('@notionhq/client', () => ({
   })),
 }));
 
-vi.mock('../../db/db.js', () => ({
-  query: vi.fn(),
-  queryOne: vi.fn(),
-  queryMany: vi.fn(),
-}));
-
-vi.mock('../../utils/encryption.js', () => ({
-  encrypt: vi.fn((val: string) => `encrypted_${val}`),
-  decrypt: vi.fn((val: string) => val.replace('encrypted_', '')),
+vi.mock('../credentials/index.js', () => ({
+  getUserIntegration: vi.fn(),
+  setUserIntegration: vi.fn(),
+  deleteUserIntegration: vi.fn(),
+  getPlatformCredentials: vi.fn(),
 }));
 
 vi.mock('../items/index.js', () => ({
   createItem: vi.fn(),
   getItem: vi.fn(),
-}));
-
-vi.mock('../../config.js', () => ({
-  config: {
-    notionClientId: 'test-client-id',
-    notionClientSecret: 'test-client-secret',
-    notionRedirectUri: 'http://localhost:3000/api/integrations/notion/callback',
-    encryptionMasterKey: 'dev-encryption-key-32-bytes-long!',
-  },
 }));
 
 vi.mock('../../logger.js', () => ({
@@ -56,8 +43,7 @@ vi.mock('../../logger.js', () => ({
   }),
 }));
 
-import { queryOne, query } from '../../db/db.js';
-import { encrypt, decrypt } from '../../utils/encryption.js';
+import { getUserIntegration, setUserIntegration, deleteUserIntegration, getPlatformCredentials } from '../credentials/index.js';
 import { createItem, getItem } from '../items/index.js';
 import {
   connectNotion,
@@ -73,13 +59,20 @@ describe('Notion Integration Service', () => {
     mockPagesRetrieve.mockReset();
     mockPagesCreate.mockReset();
     mockBlocksChildrenList.mockReset();
-    (queryOne as ReturnType<typeof vi.fn>).mockReset();
-    (query as ReturnType<typeof vi.fn>).mockReset();
+    (getUserIntegration as ReturnType<typeof vi.fn>).mockReset();
+    (setUserIntegration as ReturnType<typeof vi.fn>).mockReset();
+    (deleteUserIntegration as ReturnType<typeof vi.fn>).mockReset();
+    (getPlatformCredentials as ReturnType<typeof vi.fn>).mockReset();
     (createItem as ReturnType<typeof vi.fn>).mockReset();
     (getItem as ReturnType<typeof vi.fn>).mockReset();
-    // Re-establish encrypt/decrypt implementations
-    (encrypt as ReturnType<typeof vi.fn>).mockImplementation((val: string) => `encrypted_${val}`);
-    (decrypt as ReturnType<typeof vi.fn>).mockImplementation((val: string) => val.replace('encrypted_', ''));
+
+    // Default: getPlatformCredentials returns notion_oauth config
+    (getPlatformCredentials as ReturnType<typeof vi.fn>).mockResolvedValue({
+      clientId: 'test-client-id',
+      clientSecret: 'test-client-secret',
+      redirectUri: 'http://localhost:3000/api/integrations/notion/callback',
+    });
+
     // Restore Client mock implementation
     (Client as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       pages: {
@@ -115,7 +108,7 @@ describe('Notion Integration Service', () => {
       });
     });
 
-    it('should exchange code for token and store encrypted connection', async () => {
+    it('should exchange code for token and store connection via credential store', async () => {
       const mockTokenResponse = {
         access_token: 'ntn_test_token_123',
         workspace_id: 'ws-123',
@@ -130,16 +123,8 @@ describe('Notion Integration Service', () => {
         json: async () => mockTokenResponse,
       });
 
-      // Mock database upsert
-      const mockRow = {
-        id: 'conn-1',
-        user_id: 'user-1',
-        access_token_encrypted: 'encrypted_ntn_test_token_123',
-        workspace_id: 'ws-123',
-        workspace_name: 'Test Workspace',
-        connected_at: new Date('2024-01-01'),
-      };
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockRow);
+      // Mock setUserIntegration (upsert)
+      (setUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
       const result = await connectNotion('user-1', 'oauth_code_abc');
 
@@ -155,21 +140,19 @@ describe('Notion Integration Service', () => {
         })
       );
 
-      // Verify encryption was called on the token
-      expect(encrypt).toHaveBeenCalledWith('ntn_test_token_123');
-
-      // Verify the DB insert was called with encrypted token
-      expect(queryOne).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO notion_connections'),
-        ['user-1', 'encrypted_ntn_test_token_123', 'ws-123', 'Test Workspace']
+      // Verify setUserIntegration was called with correct params
+      expect(setUserIntegration).toHaveBeenCalledWith(
+        'user-1',
+        'notion',
+        { accessToken: 'ntn_test_token_123' },
+        { workspace_id: 'ws-123', workspace_name: 'Test Workspace' }
       );
 
       // Verify response
       expect(result).toEqual({
-        id: 'conn-1',
         workspace_id: 'ws-123',
         workspace_name: 'Test Workspace',
-        connected_at: new Date('2024-01-01'),
+        connected_at: expect.any(String),
       });
     });
 
@@ -183,6 +166,17 @@ describe('Notion Integration Service', () => {
       await expect(connectNotion('user-1', 'invalid_code')).rejects.toMatchObject({
         message: 'Failed to exchange authorization code with Notion',
         statusCode: 502,
+      });
+    });
+
+    it('should throw 503 when Notion OAuth is not configured', async () => {
+      (getPlatformCredentials as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error('Platform credentials not configured for provider: notion_oauth')
+      );
+
+      await expect(connectNotion('user-1', 'some_code')).rejects.toMatchObject({
+        message: 'Notion integration is not configured',
+        statusCode: 503,
       });
     });
   });
@@ -203,7 +197,7 @@ describe('Notion Integration Service', () => {
     });
 
     it('should throw 404 when no Notion connection exists', async () => {
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       await expect(importFromNotion('user-1', ['page-1'])).rejects.toMatchObject({
         message: 'No Notion workspace connected. Please connect first.',
@@ -212,14 +206,10 @@ describe('Notion Integration Service', () => {
     });
 
     it('should import pages and create items', async () => {
-      // Mock getNotionClient (queryOne for connection lookup)
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        id: 'conn-1',
-        user_id: 'user-1',
-        access_token_encrypted: 'encrypted_token123',
-        workspace_id: 'ws-1',
-        workspace_name: 'Workspace',
-        connected_at: new Date(),
+      // Mock getUserIntegration for getNotionClient
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        credentials: { accessToken: 'token123' },
+        metadata: { workspace_id: 'ws-1', workspace_name: 'Workspace' },
       });
 
       // Mock pages.retrieve
@@ -278,14 +268,10 @@ describe('Notion Integration Service', () => {
     });
 
     it('should continue importing other pages when one fails', async () => {
-      // Mock connection
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        id: 'conn-1',
-        user_id: 'user-1',
-        access_token_encrypted: 'encrypted_token',
-        workspace_id: 'ws-1',
-        workspace_name: 'Workspace',
-        connected_at: new Date(),
+      // Mock getUserIntegration for getNotionClient
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        credentials: { accessToken: 'token123' },
+        metadata: { workspace_id: 'ws-1', workspace_name: 'Workspace' },
       });
 
       // First page fails
@@ -350,7 +336,7 @@ describe('Notion Integration Service', () => {
     });
 
     it('should throw 404 when no Notion connection exists', async () => {
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       await expect(exportToNotion('user-1', ['item-1'])).rejects.toMatchObject({
         message: 'No Notion workspace connected. Please connect first.',
@@ -359,25 +345,11 @@ describe('Notion Integration Service', () => {
     });
 
     it('should export items as Notion pages', async () => {
-      // Mock getNotionClient
-      (queryOne as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({
-          id: 'conn-1',
-          user_id: 'user-1',
-          access_token_encrypted: 'encrypted_token',
-          workspace_id: 'ws-1',
-          workspace_name: 'Workspace',
-          connected_at: new Date(),
-        })
-        // Mock getConnection
-        .mockResolvedValueOnce({
-          id: 'conn-1',
-          user_id: 'user-1',
-          access_token_encrypted: 'encrypted_token',
-          workspace_id: 'ws-1',
-          workspace_name: 'Workspace',
-          connected_at: new Date(),
-        });
+      // Mock getUserIntegration for getNotionClient
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        credentials: { accessToken: 'token123' },
+        metadata: { workspace_id: 'ws-1', workspace_name: 'Workspace' },
+      });
 
       // Mock getItem
       (getItem as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -411,26 +383,21 @@ describe('Notion Integration Service', () => {
 
   describe('getConnection', () => {
     it('should return connection when it exists', async () => {
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        id: 'conn-1',
-        user_id: 'user-1',
-        access_token_encrypted: 'encrypted_token',
-        workspace_id: 'ws-1',
-        workspace_name: 'My Workspace',
-        connected_at: new Date('2024-06-01'),
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        credentials: { accessToken: 'token123' },
+        metadata: { workspace_id: 'ws-1', workspace_name: 'My Workspace', connected_at: '2024-06-01T00:00:00.000Z' },
       });
 
       const result = await getConnection('user-1');
       expect(result).toEqual({
-        id: 'conn-1',
         workspace_id: 'ws-1',
         workspace_name: 'My Workspace',
-        connected_at: new Date('2024-06-01'),
+        connected_at: '2024-06-01T00:00:00.000Z',
       });
     });
 
     it('should throw 404 when no connection exists', async () => {
-      (queryOne as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       await expect(getConnection('user-1')).rejects.toMatchObject({
         message: 'No Notion workspace connected. Please connect first.',
@@ -441,17 +408,18 @@ describe('Notion Integration Service', () => {
 
   describe('disconnectNotion', () => {
     it('should delete connection when it exists', async () => {
-      (query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ rowCount: 1 });
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        credentials: { accessToken: 'token123' },
+        metadata: { workspace_id: 'ws-1', workspace_name: 'Workspace' },
+      });
+      (deleteUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
       await expect(disconnectNotion('user-1')).resolves.toBeUndefined();
-      expect(query).toHaveBeenCalledWith(
-        'DELETE FROM notion_connections WHERE user_id = $1',
-        ['user-1']
-      );
+      expect(deleteUserIntegration).toHaveBeenCalledWith('user-1', 'notion');
     });
 
     it('should throw 404 when no connection to disconnect', async () => {
-      (query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ rowCount: 0 });
+      (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
       await expect(disconnectNotion('user-1')).rejects.toMatchObject({
         message: 'No Notion connection found',

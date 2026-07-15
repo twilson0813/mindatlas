@@ -67,6 +67,13 @@ vi.mock('../config.js', () => ({
   },
 }));
 
+vi.mock('../services/credentials/index.js', () => ({
+  getStripeCredentials: vi.fn().mockResolvedValue({
+    secretKey: 'sk_test_fake',
+    webhookSecret: 'whsec_test_fake',
+  }),
+}));
+
 import { queryOne, queryMany } from '../db/db.js';
 import { redisClient } from '../redis.js';
 import { stripePaymentRetryQueue } from '../queues.js';
