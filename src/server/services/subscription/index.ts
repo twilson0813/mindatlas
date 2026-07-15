@@ -184,7 +184,7 @@ export async function subscribeToPlan(
   // Create or retrieve Stripe customer
   let stripeCustomerId: string;
   const userRow = await queryOne<{ email: string }>(
-    `SELECT email FROM "user" WHERE id = $1`,
+    `SELECT email FROM users WHERE id = $1`,
     [userId]
   );
   if (!userRow) throw new Error('User not found');
