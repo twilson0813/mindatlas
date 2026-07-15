@@ -12,6 +12,7 @@ import webhooksRouter from './routes/webhooks.js';
 import keysRouter from './routes/keys.js';
 import notionRouter from './routes/notion.js';
 import integrationsRouter from './routes/integrations.js';
+import authRouter from './routes/auth.js';
 import billingRouter, { stripeWebhookRouter } from './routes/billing.js';
 import adminRouter, { createAdminSpaRouter } from './routes/admin.js';
 import docsRouter from './routes/docs.js';
@@ -51,6 +52,7 @@ export function createApp() {
   });
 
   // API routes
+  app.use('/api/auth', authRouter);
   app.use('/api/items', itemsRouter);
   app.use('/api/items', createUploadRouter());
   app.use('/api/sms', smsRouter);
