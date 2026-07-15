@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { queryOne, queryMany } from '../../db/db.js';
 import { createChildLogger } from '../../logger.js';
-import { config } from '../../config.js';
+import { getStripeCredentials } from '../credentials/index.js';
 import { loadEntitlements } from '../../middleware/entitlement.js';
 import { stripePaymentRetryQueue } from '../../queues.js';
 
@@ -11,13 +11,19 @@ const log = createChildLogger({ module: 'subscription' });
 
 let stripeClient: Stripe | null = null;
 
-export function getStripeClient(): Stripe {
+export async function getStripeClient(): Promise<Stripe> {
   if (!stripeClient) {
-    stripeClient = new Stripe(config.stripeSecretKey, {
+    const { secretKey } = await getStripeCredentials();
+    stripeClient = new Stripe(secretKey, {
       apiVersion: '2025-02-24.acacia',
     });
   }
   return stripeClient;
+}
+
+export async function getStripeWebhookSecret(): Promise<string> {
+  const { webhookSecret } = await getStripeCredentials();
+  return webhookSecret;
 }
 
 /**
@@ -155,7 +161,7 @@ export async function subscribeToPlan(
   planId: string,
   paymentMethodId: string
 ): Promise<UserSubscription> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   // Look up the plan
   const plan = await queryOne<PlanRow>(
@@ -226,7 +232,7 @@ export async function upgradePlan(
   userId: string,
   newPlanId: string
 ): Promise<UserSubscription> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
@@ -324,7 +330,7 @@ export async function downgradePlan(
  * Requirements: 18.8
  */
 export async function cancelSubscription(userId: string): Promise<void> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
@@ -360,15 +366,16 @@ export async function handleStripeWebhook(
   rawBody: Buffer,
   signature: string
 ): Promise<void> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   // Verify webhook signature
   let event: Stripe.Event;
   try {
+    const webhookSecret = await getStripeWebhookSecret();
     event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      config.stripeWebhookSecret
+      webhookSecret
     );
   } catch (err) {
     log.error({ err }, 'Stripe webhook signature verification failed');
@@ -525,7 +532,7 @@ async function handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription
  * Requirements: 18.11
  */
 export async function retryFailedPayment(subscriptionId: string): Promise<void> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE id = $1`,
@@ -755,7 +762,7 @@ export async function updatePaymentMethod(
   userId: string,
   paymentMethodId: string
 ): Promise<void> {
-  const stripe = getStripeClient();
+  const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status IN ('active', 'past_due')`,

@@ -35,6 +35,13 @@ vi.mock('../../config.js', () => ({
   },
 }));
 
+vi.mock('../credentials/index.js', () => ({
+  getStripeCredentials: vi.fn().mockResolvedValue({
+    secretKey: 'sk_test_fake',
+    webhookSecret: 'whsec_test_fake',
+  }),
+}));
+
 vi.mock('../../utils/encryption.js', () => ({
   encrypt: vi.fn((text: string) => `encrypted:${text}`),
   decrypt: vi.fn((text: string) => text.replace('encrypted:', '')),

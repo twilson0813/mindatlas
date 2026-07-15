@@ -22,6 +22,12 @@ vi.mock('../services/admin/index.js', () => ({
   getFeatureRegistry: vi.fn(),
   moderateAccount: vi.fn(),
   getAuditTrail: vi.fn(),
+  logAuditEntry: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock credential store
+vi.mock('../services/credentials/index.js', () => ({
+  setPlatformCredentials: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock database
@@ -88,6 +94,7 @@ vi.mock('../services/feature-registry/index.js', () => ({
 }));
 
 import * as adminService from '../services/admin/index.js';
+import { setPlatformCredentials } from '../services/credentials/index.js';
 
 const mockListUsers = vi.mocked(adminService.listUsers);
 const mockGetUserById = vi.mocked(adminService.getUserById);
@@ -105,13 +112,15 @@ const mockSetFeatureEntitlements = vi.mocked(adminService.setFeatureEntitlements
 const mockGetFeatureRegistry = vi.mocked(adminService.getFeatureRegistry);
 const mockModerateAccount = vi.mocked(adminService.moderateAccount);
 const mockGetAuditTrail = vi.mocked(adminService.getAuditTrail);
+const mockLogAuditEntry = vi.mocked(adminService.logAuditEntry);
+const mockSetPlatformCredentials = vi.mocked(setPlatformCredentials);
 
 /**
  * Creates a test Express app that mimics the admin route setup from app.ts.
  * Since the real app applies authenticateToken + requireAdmin at app level,
  * we simulate that by attaching admin user info directly on each request.
  */
-function createTestApp(permissions: string[] = ['users.read', 'users.write', 'metrics.read', 'plans.read', 'plans.write', 'audit.read', 'moderation.write']) {
+function createTestApp(permissions: string[] = ['users.read', 'users.write', 'metrics.read', 'plans.read', 'plans.write', 'audit.read', 'moderation.write', 'entitlements.manage']) {
   const app = express();
   app.use(express.json());
 
@@ -724,6 +733,141 @@ describe('Admin API Routes', () => {
       const response = await request(restrictedApp)
         .post('/api/admin/moderate/u1')
         .send({ action: 'flag' });
+      expect(response.status).toBe(403);
+    });
+  });
+
+  // ─── Platform Credential Routes ────────────────────────────────────────────
+
+  describe('POST /api/admin/credentials/:provider', () => {
+    it('should save OpenAI credentials successfully', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/openai')
+        .send({ apiKey: 'sk-test-key-123' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Credentials for openai saved successfully');
+      expect(mockSetPlatformCredentials).toHaveBeenCalledWith('openai', { apiKey: 'sk-test-key-123' });
+      expect(mockLogAuditEntry).toHaveBeenCalledWith(
+        'admin-1',
+        'credentials.update',
+        'platform_credentials',
+        'openai',
+        expect.objectContaining({ provider: 'openai', fieldsUpdated: ['apiKey'] })
+      );
+    });
+
+    it('should save Twilio credentials successfully', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/twilio')
+        .send({ accountSid: 'AC123', authToken: 'token456', phoneNumber: '+15551234567' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Credentials for twilio saved successfully');
+      expect(mockSetPlatformCredentials).toHaveBeenCalledWith('twilio', {
+        accountSid: 'AC123',
+        authToken: 'token456',
+        phoneNumber: '+15551234567',
+      });
+    });
+
+    it('should save Stripe credentials successfully', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/stripe')
+        .send({ secretKey: 'sk_test_abc', webhookSecret: 'whsec_xyz' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Credentials for stripe saved successfully');
+      expect(mockSetPlatformCredentials).toHaveBeenCalledWith('stripe', {
+        secretKey: 'sk_test_abc',
+        webhookSecret: 'whsec_xyz',
+      });
+    });
+
+    it('should return 400 for invalid provider', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/unknown_provider')
+        .send({ apiKey: 'test' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('Invalid provider');
+    });
+
+    it('should return 400 when OpenAI apiKey is missing', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/openai')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('apiKey is required');
+    });
+
+    it('should return 400 when Twilio fields are missing', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/twilio')
+        .send({ accountSid: 'AC123' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('accountSid, authToken, and phoneNumber are required');
+    });
+
+    it('should return 400 when Stripe fields are missing', async () => {
+      const response = await request(app)
+        .post('/api/admin/credentials/stripe')
+        .send({ secretKey: 'sk_test' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('secretKey and webhookSecret are required');
+    });
+
+    it('should return 403 without entitlements.manage permission', async () => {
+      const restrictedApp = createTestApp(['users.read']);
+      const response = await request(restrictedApp)
+        .post('/api/admin/credentials/openai')
+        .send({ apiKey: 'sk-test' });
+
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe('GET /api/admin/credentials/status', () => {
+    it('should return provider status when all configured', async () => {
+      const { queryOne: mockDbQueryOne } = await import('../db/db.js');
+      const mockedQueryOne = vi.mocked(mockDbQueryOne);
+
+      // Return updated_at for each provider
+      mockedQueryOne.mockResolvedValueOnce({ updated_at: new Date('2024-06-01T00:00:00Z') });
+      mockedQueryOne.mockResolvedValueOnce({ updated_at: new Date('2024-06-02T00:00:00Z') });
+      mockedQueryOne.mockResolvedValueOnce({ updated_at: new Date('2024-06-03T00:00:00Z') });
+
+      const response = await request(app).get('/api/admin/credentials/status');
+
+      expect(response.status).toBe(200);
+      expect(response.body.providers.openai.configured).toBe(true);
+      expect(response.body.providers.twilio.configured).toBe(true);
+      expect(response.body.providers.stripe.configured).toBe(true);
+    });
+
+    it('should return unconfigured status for missing providers', async () => {
+      const { queryOne: mockDbQueryOne } = await import('../db/db.js');
+      const mockedQueryOne = vi.mocked(mockDbQueryOne);
+
+      mockedQueryOne.mockResolvedValueOnce(null); // openai not configured
+      mockedQueryOne.mockResolvedValueOnce(null); // twilio not configured
+      mockedQueryOne.mockResolvedValueOnce(null); // stripe not configured
+
+      const response = await request(app).get('/api/admin/credentials/status');
+
+      expect(response.status).toBe(200);
+      expect(response.body.providers.openai.configured).toBe(false);
+      expect(response.body.providers.openai.updatedAt).toBeNull();
+      expect(response.body.providers.twilio.configured).toBe(false);
+      expect(response.body.providers.stripe.configured).toBe(false);
+    });
+
+    it('should return 403 without entitlements.manage permission', async () => {
+      const restrictedApp = createTestApp(['users.read']);
+      const response = await request(restrictedApp).get('/api/admin/credentials/status');
       expect(response.status).toBe(403);
     });
   });

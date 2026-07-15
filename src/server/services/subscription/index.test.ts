@@ -41,11 +41,11 @@ vi.mock('../../logger.js', () => ({
   }),
 }));
 
-vi.mock('../../config.js', () => ({
-  config: {
-    stripeSecretKey: 'sk_test_fake',
-    stripeWebhookSecret: 'whsec_test_fake',
-  },
+vi.mock('../credentials/index.js', () => ({
+  getStripeCredentials: vi.fn().mockResolvedValue({
+    secretKey: 'sk_test_fake',
+    webhookSecret: 'whsec_test_fake',
+  }),
 }));
 
 import { queryOne, queryMany } from '../../db/db.js';

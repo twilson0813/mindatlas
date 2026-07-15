@@ -11,6 +11,7 @@ import csvRouter from './routes/csv.js';
 import webhooksRouter from './routes/webhooks.js';
 import keysRouter from './routes/keys.js';
 import notionRouter from './routes/notion.js';
+import integrationsRouter from './routes/integrations.js';
 import billingRouter, { stripeWebhookRouter } from './routes/billing.js';
 import adminRouter, { createAdminSpaRouter } from './routes/admin.js';
 import docsRouter from './routes/docs.js';
@@ -57,6 +58,7 @@ export function createApp() {
   app.use('/api/webhooks', webhooksRouter);
   app.use('/api/keys', keysRouter);
   app.use('/api/integrations/notion', notionRouter);
+  app.use('/api/integrations', integrationsRouter);
   app.use('/api/billing', billingRouter);
 
   // Admin API routes (protected by admin auth + MFA)

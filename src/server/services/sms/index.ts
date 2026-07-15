@@ -1,5 +1,5 @@
 import { Twilio } from 'twilio';
-import { config } from '../../config.js';
+import { getTwilioCredentials } from '../credentials/index.js';
 import { queryOne } from '../../db/db.js';
 import { createItem } from '../items/index.js';
 import { smsRetryQueue } from '../../queues.js';
@@ -32,13 +32,23 @@ let twilioClient: Twilio | null = null;
 
 /**
  * Get or create the Twilio client instance.
+ * Fetches credentials from the credential store on first initialization.
  * Allows injection for testing.
  */
-export function getTwilioClient(): Twilio {
+export async function getTwilioClient(): Promise<Twilio> {
   if (!twilioClient) {
-    twilioClient = new Twilio(config.twilioAccountSid, config.twilioAuthToken);
+    const { accountSid, authToken } = await getTwilioCredentials();
+    twilioClient = new Twilio(accountSid, authToken);
   }
   return twilioClient;
+}
+
+/**
+ * Get the Twilio phone number from the credential store.
+ */
+export async function getTwilioPhoneNumber(): Promise<string> {
+  const { phoneNumber } = await getTwilioCredentials();
+  return phoneNumber;
 }
 
 /**
@@ -95,11 +105,12 @@ export function normalizePhoneNumber(phoneNumber: string): string {
  * Requirement 4.3: Send confirmation reply on successful item creation.
  */
 export async function sendReply(to: string, message: string): Promise<void> {
-  const client = getTwilioClient();
+  const client = await getTwilioClient();
+  const fromNumber = await getTwilioPhoneNumber();
 
   await client.messages.create({
     body: message,
-    from: config.twilioPhoneNumber,
+    from: fromNumber,
     to,
   });
 

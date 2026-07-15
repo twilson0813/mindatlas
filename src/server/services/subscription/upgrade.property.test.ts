@@ -41,6 +41,13 @@ vi.mock('../../config.js', () => ({
   },
 }));
 
+vi.mock('../credentials/index.js', () => ({
+  getStripeCredentials: vi.fn().mockResolvedValue({
+    secretKey: 'sk_test_fake',
+    webhookSecret: 'whsec_test_fake',
+  }),
+}));
+
 import { queryOne } from '../../db/db.js';
 import { loadEntitlements } from '../../middleware/entitlement.js';
 import { upgradePlan, checkEntitlement, setStripeClient } from './index.js';

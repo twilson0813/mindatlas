@@ -40,13 +40,13 @@ vi.mock('../../logger.js', () => ({
   }),
 }));
 
-// Mock the config
-vi.mock('../../config.js', () => ({
-  config: {
-    twilioAccountSid: 'test-sid',
-    twilioAuthToken: 'test-auth-token',
-    twilioPhoneNumber: '+15551234567',
-  },
+// Mock the credential store
+vi.mock('../credentials/index.js', () => ({
+  getTwilioCredentials: vi.fn().mockResolvedValue({
+    accountSid: 'test-sid',
+    authToken: 'test-auth-token',
+    phoneNumber: '+15551234567',
+  }),
 }));
 
 import { queryOne } from '../../db/db.js';

@@ -31,6 +31,12 @@ vi.mock('../../utils/encryption.js', () => ({
   decrypt: vi.fn((text: string) => text.replace('encrypted:', '')),
 }));
 
+vi.mock('../credentials/index.js', () => ({
+  getOpenAICredentials: vi.fn().mockResolvedValue({
+    apiKey: 'test-openai-api-key',
+  }),
+}));
+
 vi.mock('../../logger.js', () => ({
   createChildLogger: () => ({
     info: vi.fn(),
@@ -89,7 +95,7 @@ function createFailingOpenAIClient(error: Error) {
 describe('AI Mapper Service', () => {
   afterEach(() => {
     setOpenAIClient(null);
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   // ─── categorizeItem ──────────────────────────────────────────────────────

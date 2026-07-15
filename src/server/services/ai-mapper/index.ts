@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { config } from '../../config.js';
 import { query, queryOne, queryMany, withTransaction } from '../../db/db.js';
+import { getOpenAICredentials } from '../credentials/index.js';
 import { decrypt } from '../../utils/encryption.js';
 import { createChildLogger } from '../../logger.js';
 import type { Item } from '../items/index.js';
@@ -82,20 +82,20 @@ export interface SuggestResult {
 
 /**
  * Creates and returns an OpenAI client instance.
+ * Fetches API key from the credential store (database-backed).
  * Exposed for testability (can be overridden in tests).
  */
-export function createOpenAIClient(): OpenAI {
-  return new OpenAI({
-    apiKey: config.openaiApiKey,
-  });
+export async function createOpenAIClient(): Promise<OpenAI> {
+  const { apiKey } = await getOpenAICredentials();
+  return new OpenAI({ apiKey });
 }
 
 /** Module-level client, lazily created */
 let openaiClient: OpenAI | null = null;
 
-function getClient(): OpenAI {
+async function getClient(): Promise<OpenAI> {
   if (!openaiClient) {
-    openaiClient = createOpenAIClient();
+    openaiClient = await createOpenAIClient();
   }
   return openaiClient;
 }
@@ -164,7 +164,7 @@ interface TagRow {
  * Requirements: 6.1, 6.5
  */
 export async function categorizeItem(item: Item): Promise<CategoryResult> {
-  const client = getClient();
+  const client = await getClient();
 
   try {
     const prompt = `You are an AI content categorizer. Analyze the following content and assign relevant categories and tags.
@@ -300,7 +300,7 @@ export async function mapRelationships(
   item: Item,
   existingItems: Item[]
 ): Promise<RelationshipResult[]> {
-  const client = getClient();
+  const client = await getClient();
 
   if (existingItems.length === 0) {
     return [];
@@ -541,7 +541,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
  * Requirements: 7.1
  */
 export async function queryItems(userId: string, queryText: string): Promise<QueryResult> {
-  const client = getClient();
+  const client = await getClient();
 
   try {
     // Fetch user's items for context
@@ -654,7 +654,7 @@ Rules:
  * Requirements: 7.3
  */
 export async function suggestRelated(userId: string, itemId: string): Promise<SuggestResult> {
-  const client = getClient();
+  const client = await getClient();
 
   try {
     // Fetch the target item (verify ownership)

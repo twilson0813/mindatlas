@@ -10,15 +10,6 @@ export interface AppConfig {
   jwtSecret: string;
   jwtRefreshSecret: string;
   encryptionMasterKey: string;
-  openaiApiKey: string;
-  twilioAccountSid: string;
-  twilioAuthToken: string;
-  twilioPhoneNumber: string;
-  stripeSecretKey: string;
-  stripeWebhookSecret: string;
-  notionClientId: string;
-  notionClientSecret: string;
-  notionRedirectUri: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -38,15 +29,6 @@ export function loadConfig(): AppConfig {
     jwtSecret: getEnvVar('JWT_SECRET', 'dev-jwt-secret'),
     jwtRefreshSecret: getEnvVar('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
     encryptionMasterKey: getEnvVar('ENCRYPTION_MASTER_KEY', 'dev-encryption-key-32-bytes-long!'),
-    openaiApiKey: getEnvVar('OPENAI_API_KEY', ''),
-    twilioAccountSid: getEnvVar('TWILIO_ACCOUNT_SID', ''),
-    twilioAuthToken: getEnvVar('TWILIO_AUTH_TOKEN', ''),
-    twilioPhoneNumber: getEnvVar('TWILIO_PHONE_NUMBER', ''),
-    stripeSecretKey: getEnvVar('STRIPE_SECRET_KEY', ''),
-    stripeWebhookSecret: getEnvVar('STRIPE_WEBHOOK_SECRET', ''),
-    notionClientId: getEnvVar('NOTION_CLIENT_ID', ''),
-    notionClientSecret: getEnvVar('NOTION_CLIENT_SECRET', ''),
-    notionRedirectUri: getEnvVar('NOTION_REDIRECT_URI', 'http://localhost:3000/api/integrations/notion/callback'),
   };
 }
 
