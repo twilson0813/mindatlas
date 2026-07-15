@@ -48,7 +48,7 @@ export function isAccountLocked(user: LockableUser): boolean {
 export async function lockAccount(userId: string): Promise<void> {
   const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
   await queryOne(
-    `UPDATE "user" SET is_locked = true, locked_until = $1 WHERE id = $2`,
+    `UPDATE users SET is_locked = true, locked_until = $1 WHERE id = $2`,
     [lockUntil, userId]
   );
 }
@@ -59,7 +59,7 @@ export async function lockAccount(userId: string): Promise<void> {
  */
 export async function unlockAccount(userId: string): Promise<void> {
   await queryOne(
-    `UPDATE "user" SET is_locked = false, locked_until = NULL, failed_attempts = 0 WHERE id = $1`,
+    `UPDATE users SET is_locked = false, locked_until = NULL, failed_attempts = 0 WHERE id = $1`,
     [userId]
   );
 }
@@ -70,7 +70,7 @@ export async function unlockAccount(userId: string): Promise<void> {
  */
 export async function resetFailedAttempts(userId: string): Promise<void> {
   await queryOne(
-    `UPDATE "user" SET failed_attempts = 0 WHERE id = $1`,
+    `UPDATE users SET failed_attempts = 0 WHERE id = $1`,
     [userId]
   );
 }
@@ -89,7 +89,7 @@ export async function recordFailedAttempt(userId: string, currentFailedAttempts:
     // Lock the account
     const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
     await queryOne(
-      `UPDATE "user" SET failed_attempts = $1, is_locked = true, locked_until = $2 WHERE id = $3`,
+      `UPDATE users SET failed_attempts = $1, is_locked = true, locked_until = $2 WHERE id = $3`,
       [newAttempts, lockUntil, userId]
     );
     return true;
@@ -97,7 +97,7 @@ export async function recordFailedAttempt(userId: string, currentFailedAttempts:
 
   // Just increment the counter
   await queryOne(
-    `UPDATE "user" SET failed_attempts = $1 WHERE id = $2`,
+    `UPDATE users SET failed_attempts = $1 WHERE id = $2`,
     [newAttempts, userId]
   );
   return false;
