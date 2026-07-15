@@ -70,5 +70,19 @@ export function createApp() {
   // Admin Console SPA
   app.use(createAdminSpaRouter());
 
+  // Serve client static files in production
+  const clientBuildPath = path.resolve(process.cwd(), 'dist/client');
+  app.use(express.static(clientBuildPath));
+
+  // SPA fallback — serve index.html for all non-API routes
+  app.get('*', (_req: Request, res: Response) => {
+    const indexPath = path.resolve(clientBuildPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(404).send('Not found');
+      }
+    });
+  });
+
   return app;
 }

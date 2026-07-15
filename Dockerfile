@@ -21,6 +21,10 @@ COPY migrations/ migrations/
 # Build the server
 RUN npm run build
 
+# Build the client
+COPY vite.config.client.ts ./
+RUN npm run build:client
+
 # ==============================================================================
 # Stage 2: Production Runtime
 # ==============================================================================
@@ -40,6 +44,9 @@ RUN npm ci --omit=dev && \
 
 # Copy compiled server output from build stage (includes shared types)
 COPY --from=build /app/dist/server ./dist/server
+
+# Copy compiled client output
+COPY --from=build /app/dist/client ./dist/client
 
 # Copy documentation and migrations (needed at runtime)
 COPY --from=build /app/docs ./docs
