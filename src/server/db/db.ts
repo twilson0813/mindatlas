@@ -9,12 +9,19 @@ import { config } from '../config.js';
 let pool: Pool | null = null;
 
 export function getPoolConfig(): PoolConfig {
-  return {
+  const poolConfig: PoolConfig = {
     connectionString: config.databaseUrl,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
   };
+
+  // Enable SSL for non-localhost database connections (e.g., Lightsail managed DB)
+  if (config.databaseUrl && !config.databaseUrl.includes('localhost') && !config.databaseUrl.includes('127.0.0.1')) {
+    poolConfig.ssl = { rejectUnauthorized: false };
+  }
+
+  return poolConfig;
 }
 
 export function getPool(): Pool {
