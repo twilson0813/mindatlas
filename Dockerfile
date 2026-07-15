@@ -62,4 +62,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the server
-CMD ["node", "dist/server/index.js"]
+CMD ["node", "dist/server/server/index.js"]
