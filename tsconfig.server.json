@@ -5,5 +5,14 @@
     "rootDir": "src"
   },
   "include": ["src/server/**/*.ts", "src/shared/**/*.ts"],
-  "exclude": ["node_modules", "dist", "src/client"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/client",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.property.test.ts",
+    "src/**/*.property.test.tsx",
+    "src/**/*.integration.test.ts"
+  ]
 }
