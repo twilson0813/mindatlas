@@ -38,11 +38,8 @@ RUN npm ci --omit=dev && \
     apk del python3 make g++ && \
     npm cache clean --force
 
-# Copy compiled server output from build stage
+# Copy compiled server output from build stage (includes shared types)
 COPY --from=build /app/dist/server ./dist/server
-
-# Copy shared types (compiled)
-COPY --from=build /app/dist/shared ./dist/shared
 
 # Copy documentation and migrations (needed at runtime)
 COPY --from=build /app/docs ./docs

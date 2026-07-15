@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   app:
     image: ghcr.io/twilson0813/mindatlas:latest
