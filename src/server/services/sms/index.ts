@@ -75,7 +75,7 @@ export async function verifyPhoneNumber(phoneNumber: string): Promise<UserRow | 
   const normalizedPhone = normalizePhoneNumber(phoneNumber);
 
   const user = await queryOne<UserRow>(
-    'SELECT id, email, phone_number FROM "user" WHERE phone_number = $1',
+    'SELECT id, email, phone_number FROM users WHERE phone_number = $1',
     [normalizedPhone]
   );
 

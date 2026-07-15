@@ -22,7 +22,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     layout_data: {
       type: 'jsonb',
-      default: "'{}'",
+      default: pgm.func("'{}'::jsonb"),
     },
     generated_at: {
       type: 'timestamp with time zone',

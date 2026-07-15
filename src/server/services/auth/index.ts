@@ -129,7 +129,7 @@ export async function register(email: string, password: string): Promise<User> {
 
   // Check if user already exists
   const existing = await queryOne<{ id: string }>(
-    'SELECT id FROM "user" WHERE email = $1',
+    'SELECT id FROM users WHERE email = $1',
     [email]
   );
   if (existing) {
@@ -141,7 +141,7 @@ export async function register(email: string, password: string): Promise<User> {
 
   // Insert user
   const user = await queryOne<User>(
-    `INSERT INTO "user" (email, password_hash, role)
+    `INSERT INTO users (email, password_hash, role)
      VALUES ($1, $2, 'user')
      RETURNING id, email, phone_number, is_locked, locked_until, failed_attempts, role, created_at, updated_at`,
     [email, passwordHash]
@@ -162,7 +162,7 @@ export async function login(email: string, password: string): Promise<TokenPair>
   // Find user by email
   const user = await queryOne<User & { password_hash: string }>(
     `SELECT id, email, password_hash, phone_number, is_locked, locked_until, failed_attempts, role, created_at, updated_at
-     FROM "user" WHERE email = $1`,
+     FROM users WHERE email = $1`,
     [email]
   );
 
@@ -218,7 +218,7 @@ export async function refresh(refreshToken: string): Promise<{ accessToken: stri
 
     // Fetch current user info for the new access token
     const user = await queryOne<{ id: string; email: string; role: string }>(
-      'SELECT id, email, role FROM "user" WHERE id = $1',
+      'SELECT id, email, role FROM users WHERE id = $1',
       [payload.sub]
     );
 

@@ -18,7 +18,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     permissions: {
       type: 'jsonb',
       notNull: true,
-      default: "'[]'",
+      default: pgm.func("'[]'::jsonb"),
     },
     created_at: {
       type: 'timestamp with time zone',
@@ -93,7 +93,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     details: {
       type: 'jsonb',
-      default: "'{}'",
+      default: pgm.func("'{}'::jsonb"),
     },
     created_at: {
       type: 'timestamp with time zone',
