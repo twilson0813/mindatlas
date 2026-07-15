@@ -11,6 +11,12 @@ import path from 'path';
 
 const logger = createChildLogger({ module: 'adminRoutes' });
 
+/** Extract a single route param as string (Express types it as string | string[]) */
+function param(req: Request, name: string): string {
+  const val = req.params[name];
+  return Array.isArray(val) ? val[0] : val;
+}
+
 const router = Router();
 
 /**
@@ -205,14 +211,14 @@ router.get('/users', requirePermission('users.read'), async (req: Request, res: 
  */
 router.get('/users/:id', requirePermission('users.read'), async (req: Request, res: Response) => {
   try {
-    const user = await adminService.getUserById(req.params.id);
+    const user = await adminService.getUserById(param(req, 'id'));
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
     res.status(200).json(user);
   } catch (error) {
-    logger.error({ error, userId: req.params.id }, 'Error fetching user detail');
+    logger.error({ error, userId: param(req, 'id') }, 'Error fetching user detail');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -232,10 +238,10 @@ router.post('/users/:id/disable', requirePermission('users.write'), async (req: 
   }
 
   try {
-    await adminService.disableAccount(adminReq.adminUser.id, req.params.id, reason);
+    await adminService.disableAccount(adminReq.adminUser.id, param(req, 'id'), reason);
     res.status(200).json({ message: 'Account disabled successfully' });
   } catch (error) {
-    logger.error({ error, userId: req.params.id }, 'Error disabling account');
+    logger.error({ error, userId: param(req, 'id') }, 'Error disabling account');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -255,10 +261,10 @@ router.post('/users/:id/delete', requirePermission('users.write'), async (req: R
   }
 
   try {
-    await adminService.deleteAccount(adminReq.adminUser.id, req.params.id, reason);
+    await adminService.deleteAccount(adminReq.adminUser.id, param(req, 'id'), reason);
     res.status(200).json({ message: 'Account marked for deletion' });
   } catch (error) {
-    logger.error({ error, userId: req.params.id }, 'Error deleting account');
+    logger.error({ error, userId: param(req, 'id') }, 'Error deleting account');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -272,10 +278,10 @@ router.post('/users/:id/unlock', requirePermission('users.write'), async (req: R
   const adminReq = req as AdminAuthenticatedRequest;
 
   try {
-    await adminService.unlockAccount(adminReq.adminUser.id, req.params.id);
+    await adminService.unlockAccount(adminReq.adminUser.id, param(req, 'id'));
     res.status(200).json({ message: 'Account unlocked successfully' });
   } catch (error) {
-    logger.error({ error, userId: req.params.id }, 'Error unlocking account');
+    logger.error({ error, userId: param(req, 'id') }, 'Error unlocking account');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -360,7 +366,7 @@ router.put('/plans/:id', requirePermission('plans.write'), async (req: Request, 
   const adminReq = req as AdminAuthenticatedRequest;
 
   try {
-    const plan = await adminService.updatePlan(adminReq.adminUser.id, req.params.id, req.body);
+    const plan = await adminService.updatePlan(adminReq.adminUser.id, param(req, 'id'), req.body);
     res.status(200).json(plan);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -384,7 +390,7 @@ router.post('/plans/:id/deactivate', requirePermission('plans.write'), async (re
   const adminReq = req as AdminAuthenticatedRequest;
 
   try {
-    await adminService.deactivatePlan(adminReq.adminUser.id, req.params.id);
+    await adminService.deactivatePlan(adminReq.adminUser.id, param(req, 'id'));
     res.status(200).json({ message: 'Plan deactivated successfully' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -408,7 +414,7 @@ router.post('/plans/:id/deactivate', requirePermission('plans.write'), async (re
  */
 router.get('/plans/:id/entitlements', requirePermission('plans.read'), async (req: Request, res: Response) => {
   try {
-    const entitlements = await adminService.getFeatureEntitlements(req.params.id);
+    const entitlements = await adminService.getFeatureEntitlements(param(req, 'id'));
     res.status(200).json({ entitlements });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -436,7 +442,7 @@ router.put('/plans/:id/entitlements', requirePermission('plans.write'), async (r
   }
 
   try {
-    await adminService.setFeatureEntitlements(adminReq.adminUser.id, req.params.id, features);
+    await adminService.setFeatureEntitlements(adminReq.adminUser.id, param(req, 'id'), features);
     res.status(200).json({ message: 'Entitlements updated successfully' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -513,10 +519,10 @@ router.post('/moderate/:userId', requirePermission('moderation.write'), async (r
   }
 
   try {
-    await adminService.moderateAccount(adminReq.adminUser.id, req.params.userId, action);
+    await adminService.moderateAccount(adminReq.adminUser.id, param(req, 'userId'), action);
     res.status(200).json({ message: `Moderation action '${action}' applied successfully` });
   } catch (error) {
-    logger.error({ error, userId: req.params.userId }, 'Error moderating account');
+    logger.error({ error, userId: param(req, 'userId') }, 'Error moderating account');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -565,7 +571,7 @@ function validateProviderPayload(
  */
 router.post('/credentials/:provider', requirePermission('entitlements.manage'), async (req: Request, res: Response) => {
   const adminReq = req as AdminAuthenticatedRequest;
-  const provider = req.params.provider as string;
+  const provider = param(req, 'provider');
 
   const validProviders = ['openai', 'twilio', 'stripe'];
   if (!validProviders.includes(provider)) {

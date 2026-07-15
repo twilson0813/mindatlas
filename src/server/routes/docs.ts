@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+// @ts-ignore -- marked is ESM-only but works at runtime via bundler
 import { marked } from 'marked';
 
 const router = Router();
