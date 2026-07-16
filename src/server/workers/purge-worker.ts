@@ -55,7 +55,7 @@ export async function processPurgeJob(job: Job): Promise<PurgeJobResult> {
   // Find all items eligible for permanent deletion (deleted > 24 hours ago)
   const purgableItems = await queryMany<PurgableItem>(
     `SELECT id, user_id, file_path
-     FROM item
+     FROM items
      WHERE is_deleted = true
        AND deleted_at < NOW() - INTERVAL '24 hours'`
   );
@@ -79,7 +79,7 @@ export async function processPurgeJob(job: Job): Promise<PurgeJobResult> {
       }
 
       // Hard-delete the row from the database
-      await query('DELETE FROM item WHERE id = $1', [item.id]);
+      await query('DELETE FROM items WHERE id = $1', [item.id]);
 
       purgedCount++;
     } catch (err) {

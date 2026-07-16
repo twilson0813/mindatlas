@@ -107,7 +107,7 @@ export interface ValidationResult {
 }
 
 /**
- * Validates the item input payload.
+ * Validates the items input payload.
  * Content must be non-empty, content_type must be a valid enum value if provided.
  */
 export function validateItemInput(input: Partial<ItemInput>): ValidationResult {
@@ -258,7 +258,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Filter by category (via tag's category)
   if (filters.category) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tag it JOIN tag t ON it.tag_id = t.id JOIN category c ON t.category_id = c.id WHERE it.item_id = i.id AND c.name = $${paramIndex})`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id JOIN categories c ON t.category_id = c.id WHERE it.item_id = i.id AND c.name = $${paramIndex})`
     );
     params.push(filters.category);
     paramIndex++;
@@ -267,7 +267,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Filter by tag name
   if (filters.tag) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tag it JOIN tag t ON it.tag_id = t.id WHERE it.item_id = i.id AND t.name = $${paramIndex})`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id WHERE it.item_id = i.id AND t.name = $${paramIndex})`
     );
     params.push(filters.tag);
     paramIndex++;
@@ -299,7 +299,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
 
   // Get total count
   const countResult = await queryOne<{ count: string }>(
-    `SELECT COUNT(*) as count FROM item i WHERE ${whereClause}`,
+    `SELECT COUNT(*) as count FROM items i WHERE ${whereClause}`,
     params
   );
   const total = parseInt(countResult?.count || '0', 10);
@@ -307,7 +307,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Get paginated items
   const rows = await queryMany<ItemRow>(
     `SELECT i.id, i.user_id, i.title, i.content_encrypted, i.content_type, i.metadata, i.source_channel, i.source_domain, i.file_path, i.file_size, i.is_deleted, i.deleted_at, i.created_at, i.updated_at
-     FROM item i
+     FROM items i
      WHERE ${whereClause}
      ORDER BY i.created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -342,7 +342,7 @@ export async function deleteItem(userId: string, itemId: string): Promise<void> 
   if (result.rowCount === 0) {
     // Check if the item exists but belongs to another user
     const existing = await queryOne<{ user_id: string }>(
-      'SELECT user_id FROM item WHERE id = $1',
+      'SELECT user_id FROM items WHERE id = $1',
       [itemId]
     );
 
@@ -369,13 +369,13 @@ export async function deleteItem(userId: string, itemId: string): Promise<void> 
 
 /**
  * Retrieves relationships for an item, scoped to the authenticated user.
- * Returns relationships where the item is either the source or target,
+ * Returns relationships where the items is either the source or target,
  * and both source and target items belong to the same user.
  */
 export async function getItemRelationships(userId: string, itemId: string): Promise<Relationship[]> {
   // First verify the item belongs to this user
   const item = await queryOne<{ id: string }>(
-    'SELECT id FROM item WHERE id = $1 AND user_id = $2 AND is_deleted = false',
+    'SELECT id FROM items WHERE id = $1 AND user_id = $2 AND is_deleted = false',
     [itemId, userId]
   );
 
@@ -388,9 +388,9 @@ export async function getItemRelationships(userId: string, itemId: string): Prom
   // Get relationships where both source and target belong to this user
   const relationships = await queryMany<Relationship>(
     `SELECT r.id, r.source_item_id, r.target_item_id, r.relationship_type, r.strength, r.created_at
-     FROM relationship r
-     JOIN item src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
-     JOIN item tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false
+     FROM relationships r
+     JOIN items src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
+     JOIN items tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false
      WHERE (r.source_item_id = $2 OR r.target_item_id = $2)`,
     [userId, itemId]
   );

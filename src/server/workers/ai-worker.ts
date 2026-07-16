@@ -106,7 +106,7 @@ export async function processAiJob(job: Job<AiJobData>): Promise<AiJobResult> {
     const message = err instanceof Error ? err.message : 'Unknown error';
     lastError = message;
     log.warn({ jobId: job.id, itemId, error: message }, 'Relationship mapping failed — item still stored (graceful degradation)');
-    // Relationship mapping failure is non-critical: item is already categorized
+    // Relationship mapping failure is non-critical: items is already categorized
     // We log and continue rather than throwing (graceful degradation)
   }
 
