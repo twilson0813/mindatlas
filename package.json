@@ -11,7 +11,7 @@
     "test:client": "vitest run --config vitest.config.client.ts",
     "test:watch": "vitest",
     "dev:client": "vite --config vite.config.client.ts",
-    "build:client": "vite build --config vite.config.client.ts",
+    "build:client": "vite build --config vite.config.client.ts && vite build --config vite.config.admin.ts",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,json,css}'",

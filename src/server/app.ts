@@ -14,7 +14,7 @@ import notionRouter from './routes/notion.js';
 import integrationsRouter from './routes/integrations.js';
 import authRouter from './routes/auth.js';
 import billingRouter, { stripeWebhookRouter } from './routes/billing.js';
-import adminRouter, { createAdminSpaRouter } from './routes/admin.js';
+import adminRouter from './routes/admin.js';
 import docsRouter from './routes/docs.js';
 import { authenticateToken } from './middleware/auth.js';
 import { requireAdmin } from './middleware/adminAuth.js';
@@ -69,14 +69,23 @@ export function createApp() {
   // Documentation
   app.use('/docs', docsRouter);
 
-  // Admin Console SPA
-  app.use(createAdminSpaRouter());
+  // Serve admin SPA from separate build
+  const adminBuildPath = path.resolve(process.cwd(), 'dist/client/admin');
+  app.use('/admin', express.static(adminBuildPath));
+  app.get('/admin/*', (_req: Request, res: Response) => {
+    const indexPath = path.resolve(adminBuildPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(404).send('Admin console not found');
+      }
+    });
+  });
 
   // Serve client static files in production
   const clientBuildPath = path.resolve(process.cwd(), 'dist/client');
   app.use(express.static(clientBuildPath));
 
-  // SPA fallback — serve index.html for all non-API routes
+  // SPA fallback — serve index.html for all non-API routes (handles /admin too)
   app.get('*', (_req: Request, res: Response) => {
     const indexPath = path.resolve(clientBuildPath, 'index.html');
     res.sendFile(indexPath, (err) => {
