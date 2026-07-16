@@ -154,7 +154,7 @@ export function parseRow(
     };
   }
 
-  // Build item input
+  // Build items input
   const itemInput: ItemInput = {
     content: content.trim(),
     source_channel: 'csv_import',
@@ -387,9 +387,9 @@ export async function exportMaps(userId: string): Promise<Buffer> {
   // Query all relationships where both source and target items belong to this user
   const relationships = await queryMany<Relationship>(
     `SELECT r.id, r.source_item_id, r.target_item_id, r.relationship_type, r.strength, r.created_at
-     FROM relationship r
-     JOIN item src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
-     JOIN item tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false`,
+     FROM relationships r
+     JOIN items src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
+     JOIN items tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false`,
     [userId]
   );
 
