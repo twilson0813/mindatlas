@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { authenticator } from 'otplib';
 import { authenticateToken } from '../middleware/auth.js';
-import { requireAdmin, requirePermission, type AdminAuthenticatedRequest } from '../middleware/adminAuth.js';
+import { requirePermission, type AdminAuthenticatedRequest } from '../middleware/adminAuth.js';
 import { queryOne, query } from '../db/db.js';
 import { createChildLogger } from '../logger.js';
 import * as adminService from '../services/admin/index.js';

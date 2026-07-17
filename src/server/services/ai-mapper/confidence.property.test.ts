@@ -9,7 +9,7 @@ vi.mock('../../db/db.js', () => ({
   query: vi.fn().mockResolvedValue({ rows: [], rowCount: 0 }),
   queryOne: vi.fn().mockResolvedValue(null),
   queryMany: vi.fn().mockResolvedValue([]),
-  withTransaction: vi.fn(async (fn: Function) => {
+  withTransaction: vi.fn(async (fn: (...args: unknown[]) => unknown) => {
     const mockTxQuery = vi.fn().mockResolvedValue({
       rows: [{ id: 'mock-id', name: 'mock', color: '#000', category_id: 'cat-1' }],
     });
