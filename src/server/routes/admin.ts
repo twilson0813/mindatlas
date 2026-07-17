@@ -7,7 +7,6 @@ import { queryOne, query } from '../db/db.js';
 import { createChildLogger } from '../logger.js';
 import * as adminService from '../services/admin/index.js';
 import { setPlatformCredentials, type PlatformProviderMap } from '../services/credentials/index.js';
-import path from 'path';
 
 const logger = createChildLogger({ module: 'adminRoutes' });
 
@@ -146,32 +145,6 @@ router.post('/mfa/verify', authenticateToken, async (req: Request, res: Response
  *
  * Requirements: 17.11 (Admin Console at /admin route)
  */
-export function createAdminSpaRouter(): Router {
-  const adminSpaRouter = Router();
-
-  adminSpaRouter.get('/admin', authenticateToken, requireAdmin, (_req: Request, res: Response) => {
-    // In production, this would serve the built admin SPA
-    // For now, serve a placeholder or the built static files
-    const adminBuildPath = path.resolve(process.cwd(), 'dist/client/admin/index.html');
-    res.sendFile(adminBuildPath, (err) => {
-      if (err) {
-        res.status(200).send('<!DOCTYPE html><html><head><title>MindAtlas Admin</title></head><body><div id="admin-root"></div></body></html>');
-      }
-    });
-  });
-
-  adminSpaRouter.get('/admin/*', authenticateToken, requireAdmin, (_req: Request, res: Response) => {
-    const adminBuildPath = path.resolve(process.cwd(), 'dist/client/admin/index.html');
-    res.sendFile(adminBuildPath, (err) => {
-      if (err) {
-        res.status(200).send('<!DOCTYPE html><html><head><title>MindAtlas Admin</title></head><body><div id="admin-root"></div></body></html>');
-      }
-    });
-  });
-
-  return adminSpaRouter;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // Admin API Routes (protected by admin auth + MFA via app-level middleware)
 // Requirements: 17.2, 17.5, 17.6, 17.7, 17.9, 17.10, 17.11
