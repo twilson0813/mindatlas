@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ItemGrid } from './ItemGrid';
 import { Item } from './ItemCard';
+import { UploadForm } from './UploadForm';
+import { CsvUpload } from './CsvUpload';
 
 export interface DashboardStats {
   totalItems: number;
@@ -27,9 +29,56 @@ export function Dashboard({ items, stats, onItemClick }: DashboardProps) {
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState<NavSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const closeSidebar = () => setSidebarOpen(false);
+
+  const handleUploadSubmit = useCallback(
+    async (data: { content: string; file?: File; tags: string[] }) => {
+      const formData = new FormData();
+      if (data.content) formData.append('content', data.content);
+      if (data.file) formData.append('file', data.file);
+      if (data.tags.length > 0) formData.append('tags', JSON.stringify(data.tags));
+
+      const token = localStorage.getItem('mindatlas_access_token');
+      const response = await fetch('/api/items/upload', {
+        method: 'POST',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Upload failed');
+      }
+
+      setSuccessMessage('Item uploaded successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    },
+    [],
+  );
+
+  const handleCsvImport = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('mindatlas_access_token');
+    const response = await fetch('/api/csv/import', {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || 'CSV import failed');
+    }
+
+    setSuccessMessage('CSV imported successfully!');
+    setTimeout(() => setSuccessMessage(null), 3000);
+    return response.json();
+  }, []);
 
   return (
     <div className="dashboard-layout">
@@ -193,7 +242,23 @@ export function Dashboard({ items, stats, onItemClick }: DashboardProps) {
           {activeSection === 'maps' && <p className="text-muted">Maps will be displayed here.</p>}
 
           {activeSection === 'upload' && (
-            <p className="text-muted">Upload form will be displayed here.</p>
+            <>
+              {successMessage && (
+                <div className="upload-success" role="status">
+                  {successMessage}
+                </div>
+              )}
+              <section className="upload-section">
+                <h3>Single Item Upload</h3>
+                <p className="text-muted">Add text content, paste a link, or upload a file.</p>
+                <UploadForm onSubmit={handleUploadSubmit} />
+              </section>
+              <hr className="upload-divider" />
+              <section className="upload-section">
+                <h3>CSV Bulk Import</h3>
+                <CsvUpload onImport={handleCsvImport} />
+              </section>
+            </>
           )}
 
           {activeSection === 'integrations' && (
