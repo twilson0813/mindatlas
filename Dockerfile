@@ -22,7 +22,7 @@ COPY migrations/ migrations/
 RUN npm run build
 
 # Build the client
-COPY vite.config.client.ts ./
+COPY vite.config.client.ts vite.config.admin.ts ./
 RUN npm run build:client
 
 # ==============================================================================
