@@ -180,7 +180,7 @@ describe('Auth Service', () => {
       expect(mockQueryOne).toHaveBeenCalledTimes(2);
       // Verify the INSERT was called with a bcrypt hash
       const insertCall = mockQueryOne.mock.calls[1];
-      expect(insertCall[0]).toContain('INSERT INTO "user"');
+      expect(insertCall[0]).toContain('INSERT INTO users');
       expect(insertCall[1]![0]).toBe('test@example.com');
       // The second param should be a bcrypt hash
       expect(insertCall[1]![1] as string).toMatch(/^\$2[aby]?\$12\$/);

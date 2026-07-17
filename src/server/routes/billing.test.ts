@@ -88,7 +88,7 @@ const mockCheckStorageLimit = vi.mocked(checkStorageLimit);
 const mockCheckAiQueryLimit = vi.mocked(checkAiQueryLimit);
 const mockHandleStripeWebhook = vi.mocked(handleStripeWebhook);
 
-const TEST_JWT_SECRET = 'dev-jwt-secret';
+const TEST_JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret';
 const TEST_USER_ID = 'user-123';
 
 function generateTestToken(userId = TEST_USER_ID): string {
