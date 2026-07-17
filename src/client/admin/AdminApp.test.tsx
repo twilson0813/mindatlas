@@ -26,7 +26,7 @@ describe('AdminApp integration', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
     expect(screen.getByText('Admin Access Verification')).toBeInTheDocument();
     expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
@@ -38,7 +38,7 @@ describe('AdminApp integration', () => {
         <AdminLayout>
           <div>Page Content</div>
         </AdminLayout>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(screen.getByText('Admin Console')).toBeInTheDocument();
     expect(screen.getByText('Page Content')).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('AdminApp integration', () => {
         <AdminLayout>
           <div>Content</div>
         </AdminLayout>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     const nav = screen.getByLabelText('Admin navigation');
     expect(nav).toHaveTextContent('Users');

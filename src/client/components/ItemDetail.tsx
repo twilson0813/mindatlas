@@ -59,20 +59,14 @@ export function ItemDetail({ item, onClose, onRelatedItemClick }: ItemDetailProp
         <div className="item-detail__title-row">
           <h2 className="item-detail__title">{item.title}</h2>
           {onClose && (
-            <button
-              className="item-detail__close"
-              onClick={onClose}
-              aria-label="Close item detail"
-            >
+            <button className="item-detail__close" onClick={onClose} aria-label="Close item detail">
               ✕
             </button>
           )}
         </div>
         <div className="item-detail__meta">
           <span className="item-detail__type">{item.contentType}</span>
-          {item.sourceDomain && (
-            <span className="item-detail__source">{item.sourceDomain}</span>
-          )}
+          {item.sourceDomain && <span className="item-detail__source">{item.sourceDomain}</span>}
           <time className="item-detail__date" dateTime={item.createdAt}>
             {formatDate(item.createdAt)}
           </time>

@@ -129,7 +129,7 @@ describe('sanitizeForSql', () => {
     const input = "'; DROP TABLE users; --";
     const result = sanitizeForSql(input);
     expect(result).toBe("''; DROP TABLE users; --");
-    expect(result).not.toContain("\x00");
+    expect(result).not.toContain('\x00');
   });
 });
 
@@ -189,7 +189,7 @@ describe('containsSqlInjectionPatterns', () => {
   });
 
   it('detects statement chaining', () => {
-    expect(containsSqlInjectionPatterns("; DROP TABLE users")).toBe(true);
+    expect(containsSqlInjectionPatterns('; DROP TABLE users')).toBe(true);
   });
 
   it('does not flag normal text with SQL keywords', () => {

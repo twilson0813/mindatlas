@@ -120,7 +120,18 @@ const mockSetPlatformCredentials = vi.mocked(setPlatformCredentials);
  * Since the real app applies authenticateToken + requireAdmin at app level,
  * we simulate that by attaching admin user info directly on each request.
  */
-function createTestApp(permissions: string[] = ['users.read', 'users.write', 'metrics.read', 'plans.read', 'plans.write', 'audit.read', 'moderation.write', 'entitlements.manage']) {
+function createTestApp(
+  permissions: string[] = [
+    'users.read',
+    'users.write',
+    'metrics.read',
+    'plans.read',
+    'plans.write',
+    'audit.read',
+    'moderation.write',
+    'entitlements.manage',
+  ],
+) {
   const app = express();
   app.use(express.json());
 
@@ -197,8 +208,9 @@ describe('Admin API Routes', () => {
         totalPages: 0,
       });
 
-      await request(app)
-        .get('/api/admin/users?page=2&pageSize=10&email=test&status=locked&plan=pro');
+      await request(app).get(
+        '/api/admin/users?page=2&pageSize=10&email=test&status=locked&plan=pro',
+      );
 
       expect(mockListUsers).toHaveBeenCalledWith({
         page: 2,
@@ -268,9 +280,7 @@ describe('Admin API Routes', () => {
     });
 
     it('should return 400 without reason', async () => {
-      const response = await request(app)
-        .post('/api/admin/users/u1/disable')
-        .send({});
+      const response = await request(app).post('/api/admin/users/u1/disable').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Reason is required');
@@ -291,9 +301,7 @@ describe('Admin API Routes', () => {
     });
 
     it('should return 400 without reason', async () => {
-      const response = await request(app)
-        .post('/api/admin/users/u1/delete')
-        .send({});
+      const response = await request(app).post('/api/admin/users/u1/delete').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Reason is required');
@@ -304,9 +312,7 @@ describe('Admin API Routes', () => {
     it('should unlock a user account', async () => {
       mockUnlockAccount.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/admin/users/u1/unlock')
-        .send();
+      const response = await request(app).post('/api/admin/users/u1/unlock').send();
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Account unlocked successfully');
@@ -420,28 +426,27 @@ describe('Admin API Routes', () => {
         updatedAt: new Date(),
       });
 
-      const response = await request(app)
-        .post('/api/admin/plans')
-        .send({
-          name: 'starter',
-          displayName: 'Starter',
-          stripePriceId: 'price_starter',
-          priceMonthyCents: 999,
-          storageLimitMb: 1024,
-          aiQueriesPerDay: 50,
-        });
+      const response = await request(app).post('/api/admin/plans').send({
+        name: 'starter',
+        displayName: 'Starter',
+        stripePriceId: 'price_starter',
+        priceMonthyCents: 999,
+        storageLimitMb: 1024,
+        aiQueriesPerDay: 50,
+      });
 
       expect(response.status).toBe(201);
       expect(response.body.name).toBe('starter');
-      expect(mockCreatePlan).toHaveBeenCalledWith('admin-1', expect.objectContaining({ name: 'starter' }));
+      expect(mockCreatePlan).toHaveBeenCalledWith(
+        'admin-1',
+        expect.objectContaining({ name: 'starter' }),
+      );
     });
 
     it('should return 400 for validation errors', async () => {
       mockCreatePlan.mockRejectedValue(new Error('Plan name is required'));
 
-      const response = await request(app)
-        .post('/api/admin/plans')
-        .send({});
+      const response = await request(app).post('/api/admin/plans').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Plan name is required');
@@ -486,9 +491,7 @@ describe('Admin API Routes', () => {
     it('should deactivate a plan', async () => {
       mockDeactivatePlan.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/admin/plans/plan-1/deactivate')
-        .send();
+      const response = await request(app).post('/api/admin/plans/plan-1/deactivate').send();
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Plan deactivated successfully');
@@ -497,9 +500,7 @@ describe('Admin API Routes', () => {
     it('should return 404 for non-existent plan', async () => {
       mockDeactivatePlan.mockRejectedValue(new Error('Plan not found'));
 
-      const response = await request(app)
-        .post('/api/admin/plans/nonexistent/deactivate')
-        .send();
+      const response = await request(app).post('/api/admin/plans/nonexistent/deactivate').send();
 
       expect(response.status).toBe(404);
     });
@@ -507,9 +508,7 @@ describe('Admin API Routes', () => {
     it('should return 400 for already inactive plan', async () => {
       mockDeactivatePlan.mockRejectedValue(new Error('Plan is already inactive'));
 
-      const response = await request(app)
-        .post('/api/admin/plans/plan-1/deactivate')
-        .send();
+      const response = await request(app).post('/api/admin/plans/plan-1/deactivate').send();
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Plan is already inactive');
@@ -557,20 +556,14 @@ describe('Admin API Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Entitlements updated successfully');
-      expect(mockSetFeatureEntitlements).toHaveBeenCalledWith(
-        'admin-1',
-        'plan-1',
-        [
-          { featureKey: 'input.sms', enabled: true },
-          { featureKey: 'ai.categorization', enabled: false },
-        ]
-      );
+      expect(mockSetFeatureEntitlements).toHaveBeenCalledWith('admin-1', 'plan-1', [
+        { featureKey: 'input.sms', enabled: true },
+        { featureKey: 'ai.categorization', enabled: false },
+      ]);
     });
 
     it('should return 400 without features array', async () => {
-      const response = await request(app)
-        .put('/api/admin/plans/plan-1/entitlements')
-        .send({});
+      const response = await request(app).put('/api/admin/plans/plan-1/entitlements').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Features array is required');
@@ -578,7 +571,7 @@ describe('Admin API Routes', () => {
 
     it('should return 400 for unregistered feature', async () => {
       mockSetFeatureEntitlements.mockRejectedValue(
-        new Error("Feature 'unknown.feature' is not registered in the feature registry")
+        new Error("Feature 'unknown.feature' is not registered in the feature registry"),
       );
 
       const response = await request(app)
@@ -656,8 +649,9 @@ describe('Admin API Routes', () => {
         totalPages: 0,
       });
 
-      await request(app)
-        .get('/api/admin/audit?page=2&pageSize=10&action=disable_account&targetType=user');
+      await request(app).get(
+        '/api/admin/audit?page=2&pageSize=10&action=disable_account&targetType=user',
+      );
 
       expect(mockGetAuditTrail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -665,7 +659,7 @@ describe('Admin API Routes', () => {
           pageSize: 10,
           action: 'disable_account',
           targetType: 'user',
-        })
+        }),
       );
     });
 
@@ -682,9 +676,7 @@ describe('Admin API Routes', () => {
     it('should apply moderation action', async () => {
       mockModerateAccount.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/admin/moderate/u1')
-        .send({ action: 'flag' });
+      const response = await request(app).post('/api/admin/moderate/u1').send({ action: 'flag' });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Moderation action 'flag' applied successfully");
@@ -704,9 +696,7 @@ describe('Admin API Routes', () => {
     it('should accept unflag action', async () => {
       mockModerateAccount.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/admin/moderate/u1')
-        .send({ action: 'unflag' });
+      const response = await request(app).post('/api/admin/moderate/u1').send({ action: 'unflag' });
 
       expect(response.status).toBe(200);
     });
@@ -721,9 +711,7 @@ describe('Admin API Routes', () => {
     });
 
     it('should return 400 for missing action', async () => {
-      const response = await request(app)
-        .post('/api/admin/moderate/u1')
-        .send({});
+      const response = await request(app).post('/api/admin/moderate/u1').send({});
 
       expect(response.status).toBe(400);
     });
@@ -747,13 +735,15 @@ describe('Admin API Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Credentials for openai saved successfully');
-      expect(mockSetPlatformCredentials).toHaveBeenCalledWith('openai', { apiKey: 'sk-test-key-123' });
+      expect(mockSetPlatformCredentials).toHaveBeenCalledWith('openai', {
+        apiKey: 'sk-test-key-123',
+      });
       expect(mockLogAuditEntry).toHaveBeenCalledWith(
         'admin-1',
         'credentials.update',
         'platform_credentials',
         'openai',
-        expect.objectContaining({ provider: 'openai', fieldsUpdated: ['apiKey'] })
+        expect.objectContaining({ provider: 'openai', fieldsUpdated: ['apiKey'] }),
       );
     });
 
@@ -794,9 +784,7 @@ describe('Admin API Routes', () => {
     });
 
     it('should return 400 when OpenAI apiKey is missing', async () => {
-      const response = await request(app)
-        .post('/api/admin/credentials/openai')
-        .send({});
+      const response = await request(app).post('/api/admin/credentials/openai').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('apiKey is required');

@@ -135,7 +135,7 @@ describe('UserManagement', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/admin/users/user-1/disable',
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({ method: 'POST' }),
       );
     });
   });

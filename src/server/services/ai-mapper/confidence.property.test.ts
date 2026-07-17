@@ -79,7 +79,9 @@ describe('Property 10: Confidence Score Bounds', () => {
   );
 
   // Generator for category names
-  const categoryNameArb = fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0);
+  const categoryNameArb = fc
+    .string({ minLength: 1, maxLength: 30 })
+    .filter((s) => s.trim().length > 0);
 
   // Generator for a single category with random confidence
   const categoryArb = fc.record({

@@ -38,7 +38,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     // "Free" appears in both plan name and price, so use getAllByText
@@ -54,7 +54,7 @@ describe('PlanSelector', () => {
         currentPlanId="pro"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     // Badge and disabled button both say "Current Plan"
@@ -68,7 +68,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByLabelText('Upgrade to Pro')).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe('PlanSelector', () => {
         currentPlanId="enterprise"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByLabelText('Downgrade to Free')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={onUpgrade}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByLabelText('Upgrade to Pro'));
@@ -112,7 +112,7 @@ describe('PlanSelector', () => {
         currentPlanId="enterprise"
         onUpgrade={vi.fn()}
         onDowngrade={onDowngrade}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByLabelText('Downgrade to Pro'));
@@ -126,7 +126,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('$19.99')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText('Basic AI categorization')).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('PlanSelector', () => {
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
         isLoading={true}
-      />
+      />,
     );
 
     const upgradeButtons = screen.getAllByText('Processing...');
@@ -172,7 +172,7 @@ describe('PlanSelector', () => {
         currentPlanId="free"
         onUpgrade={vi.fn()}
         onDowngrade={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByLabelText('Subscription plans')).toBeInTheDocument();

@@ -32,7 +32,9 @@ const HIGHLIGHT_COLOR = '#818cf8';
 
 // Dynamically load react-force-graph-2d only in browser environments with canvas support
 function useForceGraph() {
-  const [ForceGraph, setForceGraph] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
+  const [ForceGraph, setForceGraph] = useState<React.ComponentType<Record<string, unknown>> | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +51,9 @@ function useForceGraph() {
     }
 
     loadGraph();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return ForceGraph;
@@ -94,7 +98,7 @@ export function MapViewer({ map, width = 800, height = 600, onNodeClick }: MapVi
         strength: edge.strength ?? 1,
       })),
     }),
-    [map]
+    [map],
   );
 
   const handleNodeClick = useCallback(
@@ -103,15 +107,12 @@ export function MapViewer({ map, width = 800, height = 600, onNodeClick }: MapVi
         onNodeClick(String(node.id));
       }
     },
-    [onNodeClick]
+    [onNodeClick],
   );
 
-  const handleNodeHover = useCallback(
-    (node: { id?: string | number } | null) => {
-      setHoveredNode(node?.id ? String(node.id) : null);
-    },
-    []
-  );
+  const handleNodeHover = useCallback((node: { id?: string | number } | null) => {
+    setHoveredNode(node?.id ? String(node.id) : null);
+  }, []);
 
   const nodeColor = useCallback(
     (node: { id?: string | number; color?: string }) => {
@@ -120,17 +121,14 @@ export function MapViewer({ map, width = 800, height = 600, onNodeClick }: MapVi
       }
       return (node.color as string) || DEFAULT_NODE_COLOR;
     },
-    [hoveredNode]
+    [hoveredNode],
   );
 
-  const nodeLabel = useCallback(
-    (node: { label?: string; category?: string }) => {
-      const label = (node.label as string) || '';
-      const category = node.category ? ` (${node.category})` : '';
-      return `${label}${category}`;
-    },
-    []
-  );
+  const nodeLabel = useCallback((node: { label?: string; category?: string }) => {
+    const label = (node.label as string) || '';
+    const category = node.category ? ` (${node.category})` : '';
+    return `${label}${category}`;
+  }, []);
 
   if (map.nodes.length === 0) {
     return (

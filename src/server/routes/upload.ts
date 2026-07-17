@@ -63,7 +63,11 @@ const upload = multer({
   },
   fileFilter: (_req, file, cb) => {
     if (!isAllowedExtension(file.originalname)) {
-      cb(new Error(`File type not allowed. Allowed types: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`));
+      cb(
+        new Error(
+          `File type not allowed. Allowed types: ${Array.from(ALLOWED_EXTENSIONS).join(', ')}`,
+        ),
+      );
       return;
     }
     cb(null, true);
@@ -145,7 +149,17 @@ export function createUploadRouter(): Router {
           // Read file content as text for item creation (for text-based files)
           let fileContent = file.originalname;
           const ext = path.extname(file.originalname).toLowerCase();
-          const textExtensions = new Set(['.txt', '.md', '.csv', '.json', '.py', '.js', '.ts', '.html', '.css']);
+          const textExtensions = new Set([
+            '.txt',
+            '.md',
+            '.csv',
+            '.json',
+            '.py',
+            '.js',
+            '.ts',
+            '.html',
+            '.css',
+          ]);
           if (textExtensions.has(ext)) {
             fileContent = file.buffer.toString('utf-8');
           }
@@ -161,7 +175,10 @@ export function createUploadRouter(): Router {
             file_size: stored.fileSize,
           });
 
-          log.info({ itemId: item.id, userId, fileName: file.originalname }, 'File uploaded and item created');
+          log.info(
+            { itemId: item.id, userId, fileName: file.originalname },
+            'File uploaded and item created',
+          );
 
           res.status(201).json(item);
         } else {
@@ -183,7 +200,7 @@ export function createUploadRouter(): Router {
         log.error({ error: err.message }, 'Upload failed');
         res.status(statusCode).json({ error: err.message });
       }
-    }
+    },
   );
 
   return router;

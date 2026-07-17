@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { isAllowedExtension, isAllowedFileSize, MAX_FILE_SIZE, ALLOWED_EXTENSIONS, createUploadRouter } from './upload.js';
+import {
+  isAllowedExtension,
+  isAllowedFileSize,
+  MAX_FILE_SIZE,
+  ALLOWED_EXTENSIONS,
+  createUploadRouter,
+} from './upload.js';
 
 /**
  * Unit tests for upload validation logic and endpoint.
@@ -94,7 +100,22 @@ describe('Upload Validation', () => {
 
   describe('ALLOWED_EXTENSIONS set', () => {
     it('contains all required extensions', () => {
-      const required = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.txt', '.md', '.csv', '.json', '.py', '.js', '.ts', '.html', '.css'];
+      const required = [
+        '.pdf',
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.txt',
+        '.md',
+        '.csv',
+        '.json',
+        '.py',
+        '.js',
+        '.ts',
+        '.html',
+        '.css',
+      ];
       for (const ext of required) {
         expect(ALLOWED_EXTENSIONS.has(ext)).toBe(true);
       }
@@ -109,7 +130,11 @@ describe('POST /api/items/upload', () => {
   beforeEach(() => {
     // Mock dependencies
     vi.mock('../middleware/auth.js', () => ({
-      authenticateToken: (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+      authenticateToken: (
+        req: express.Request,
+        _res: express.Response,
+        next: express.NextFunction,
+      ) => {
         req.user = { sub: 'user-123', email: 'test@example.com', role: 'user', iat: 0, exp: 0 };
         next();
       },
@@ -161,18 +186,14 @@ describe('POST /api/items/upload', () => {
   });
 
   it('returns 400 when neither file nor content is provided', async () => {
-    const res = await request(app)
-      .post('/api/items/upload')
-      .field('content', '');
+    const res = await request(app).post('/api/items/upload').field('content', '');
 
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('Either a file upload or text content is required');
   });
 
   it('accepts text-only submission without a file (Req 5.6)', async () => {
-    const res = await request(app)
-      .post('/api/items/upload')
-      .field('content', 'Hello, world!');
+    const res = await request(app).post('/api/items/upload').field('content', 'Hello, world!');
 
     expect(res.status).toBe(201);
     expect(res.body.id).toBe('item-1');

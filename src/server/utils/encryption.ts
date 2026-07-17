@@ -66,10 +66,7 @@ export function encrypt(plaintext: string): string {
   const iv = randomBytes(IV_LENGTH);
 
   const cipher = createCipheriv(ALGORITHM, key, iv);
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
   const payload: EncryptedPayload = {
@@ -99,10 +96,7 @@ export function decrypt(encrypted: string): string {
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(authTag);
 
-  const decrypted = Buffer.concat([
-    decipher.update(ciphertext),
-    decipher.final(),
-  ]);
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 
   return decrypted.toString('utf8');
 }
@@ -123,7 +117,7 @@ export function deserializePayload(serialized: string): EncryptedPayload {
   const parts = serialized.split(':');
   if (parts.length !== 3) {
     throw new Error(
-      `Invalid encrypted payload format: expected 3 parts separated by ":", got ${parts.length}`
+      `Invalid encrypted payload format: expected 3 parts separated by ":", got ${parts.length}`,
     );
   }
 

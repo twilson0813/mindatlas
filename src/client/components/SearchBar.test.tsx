@@ -22,9 +22,7 @@ describe('SearchBar', () => {
     await user.type(input, 'test query');
     await user.click(screen.getByRole('button', { name: /^search$/i }));
 
-    expect(onSearch).toHaveBeenCalledWith(
-      expect.objectContaining({ keyword: 'test query' })
-    );
+    expect(onSearch).toHaveBeenCalledWith(expect.objectContaining({ keyword: 'test query' }));
   });
 
   it('expands filter panel when Filters button is clicked', async () => {
@@ -34,7 +32,7 @@ describe('SearchBar', () => {
         onSearch={vi.fn()}
         categories={['Tech', 'Science']}
         tags={['important', 'review']}
-      />
+      />,
     );
 
     // Filters should not be visible initially
@@ -53,9 +51,7 @@ describe('SearchBar', () => {
 
   it('renders category options from props', async () => {
     const user = userEvent.setup();
-    render(
-      <SearchBar onSearch={vi.fn()} categories={['Tech', 'Science', 'Art']} />
-    );
+    render(<SearchBar onSearch={vi.fn()} categories={['Tech', 'Science', 'Art']} />);
 
     await user.click(screen.getByRole('button', { name: /filters/i }));
 
@@ -68,9 +64,7 @@ describe('SearchBar', () => {
 
   it('renders tag options from props', async () => {
     const user = userEvent.setup();
-    render(
-      <SearchBar onSearch={vi.fn()} tags={['important', 'review']} />
-    );
+    render(<SearchBar onSearch={vi.fn()} tags={['important', 'review']} />);
 
     await user.click(screen.getByRole('button', { name: /filters/i }));
 
@@ -81,13 +75,7 @@ describe('SearchBar', () => {
   it('calls onSearch with all filters on submit', async () => {
     const onSearch = vi.fn();
     const user = userEvent.setup();
-    render(
-      <SearchBar
-        onSearch={onSearch}
-        categories={['Tech']}
-        tags={['important']}
-      />
-    );
+    render(<SearchBar onSearch={onSearch} categories={['Tech']} tags={['important']} />);
 
     // Type keyword
     await user.type(screen.getByLabelText(/search keyword/i), 'hello');
@@ -116,13 +104,7 @@ describe('SearchBar', () => {
   it('clears all filters when Clear button is clicked', async () => {
     const onSearch = vi.fn();
     const user = userEvent.setup();
-    render(
-      <SearchBar
-        onSearch={onSearch}
-        categories={['Tech']}
-        tags={['important']}
-      />
-    );
+    render(<SearchBar onSearch={onSearch} categories={['Tech']} tags={['important']} />);
 
     // Type keyword
     await user.type(screen.getByLabelText(/search keyword/i), 'test');

@@ -53,57 +53,47 @@ describe('Admin Service - User Management & Content Isolation', () => {
   describe('AdminDataAccess.validateQuerySafety', () => {
     it('should reject queries containing content_encrypted', () => {
       expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT content_encrypted FROM items'
-        )
+        AdminDataAccess.validateQuerySafety('SELECT content_encrypted FROM items'),
       ).toThrow(ContentAccessViolationError);
     });
 
     it('should reject queries containing file_path', () => {
       expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT file_path FROM items WHERE user_id = $1'
-        )
+        AdminDataAccess.validateQuerySafety('SELECT file_path FROM items WHERE user_id = $1'),
       ).toThrow(ContentAccessViolationError);
     });
 
     it('should reject queries containing content as a standalone field', () => {
-      expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT id, content FROM items'
-        )
-      ).toThrow(ContentAccessViolationError);
+      expect(() => AdminDataAccess.validateQuerySafety('SELECT id, content FROM items')).toThrow(
+        ContentAccessViolationError,
+      );
     });
 
     it('should reject queries containing file_data', () => {
-      expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT file_data FROM items'
-        )
-      ).toThrow(ContentAccessViolationError);
+      expect(() => AdminDataAccess.validateQuerySafety('SELECT file_data FROM items')).toThrow(
+        ContentAccessViolationError,
+      );
     });
 
     it('should allow queries that do not reference content fields', () => {
       expect(() =>
         AdminDataAccess.validateQuerySafety(
-          'SELECT user_id, email, role, is_locked FROM admin_user_summary'
-        )
+          'SELECT user_id, email, role, is_locked FROM admin_user_summary',
+        ),
       ).not.toThrow();
     });
 
     it('should allow queries with substrings (card_count does not match content)', () => {
       expect(() =>
         AdminDataAccess.validateQuerySafety(
-          'SELECT card_count, total_storage_used_bytes FROM admin_user_summary'
-        )
+          'SELECT card_count, total_storage_used_bytes FROM admin_user_summary',
+        ),
       ).not.toThrow();
     });
 
     it('should be case-insensitive when checking', () => {
       expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT CONTENT_ENCRYPTED FROM items'
-        )
+        AdminDataAccess.validateQuerySafety('SELECT CONTENT_ENCRYPTED FROM items'),
       ).toThrow(ContentAccessViolationError);
     });
   });
@@ -389,15 +379,15 @@ describe('Admin Service - User Management & Content Isolation', () => {
   describe('getSystemMetrics', () => {
     it('should return aggregated metrics', async () => {
       mockQueryOne
-        .mockResolvedValueOnce({ count: 100 })  // totalUsers
-        .mockResolvedValueOnce({ count: 25 })   // activeDaily
-        .mockResolvedValueOnce({ count: 60 })   // activeWeekly
-        .mockResolvedValueOnce({ count: 80 })   // activeMonthly
+        .mockResolvedValueOnce({ count: 100 }) // totalUsers
+        .mockResolvedValueOnce({ count: 25 }) // activeDaily
+        .mockResolvedValueOnce({ count: 60 }) // activeWeekly
+        .mockResolvedValueOnce({ count: 80 }) // activeMonthly
         .mockResolvedValueOnce({ count: 5000 }) // totalCards
-        .mockResolvedValueOnce({ count: 200 })  // apiVolume24h
+        .mockResolvedValueOnce({ count: 200 }) // apiVolume24h
         .mockResolvedValueOnce({ count: 1200 }) // apiVolume7d
-        .mockResolvedValueOnce({ count: 3 })    // errors24h
-        .mockResolvedValueOnce({ count: 15 });  // errors7d
+        .mockResolvedValueOnce({ count: 3 }) // errors24h
+        .mockResolvedValueOnce({ count: 15 }); // errors7d
 
       const metrics = await getSystemMetrics();
 

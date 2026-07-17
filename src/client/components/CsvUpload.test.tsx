@@ -80,7 +80,10 @@ describe('CsvUpload', () => {
     // Use a slow-resolving promise to observe progress state
     let resolveImport: (value: unknown) => void;
     mockOnImport.mockImplementation(
-      () => new Promise((resolve) => { resolveImport = resolve; })
+      () =>
+        new Promise((resolve) => {
+          resolveImport = resolve;
+        }),
     );
 
     render(<CsvUpload onImport={mockOnImport} />);

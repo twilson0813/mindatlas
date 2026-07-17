@@ -110,7 +110,9 @@ describe('Dashboard', () => {
   it('shows empty state when no items', () => {
     render(<Dashboard items={[]} stats={mockStats} />);
 
-    expect(screen.getByText('No items yet. Start adding content to see it here.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No items yet. Start adding content to see it here.'),
+    ).toBeInTheDocument();
   });
 
   it('has accessible sidebar navigation landmark', () => {

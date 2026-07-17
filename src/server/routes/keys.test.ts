@@ -61,11 +61,7 @@ vi.mock('../config.js', () => ({
   },
 }));
 
-import {
-  generateApiKey,
-  revokeApiKey,
-  listApiKeys,
-} from '../services/integrations/index.js';
+import { generateApiKey, revokeApiKey, listApiKeys } from '../services/integrations/index.js';
 
 const mockGenerateApiKey = vi.mocked(generateApiKey);
 const mockRevokeApiKey = vi.mocked(revokeApiKey);
@@ -79,11 +75,9 @@ function createTestApp() {
 }
 
 function generateTestToken(userId: string = 'user-123'): string {
-  return jwt.sign(
-    { sub: userId, email: 'test@example.com', role: 'user' },
-    'test-secret',
-    { expiresIn: '15m' }
-  );
+  return jwt.sign({ sub: userId, email: 'test@example.com', role: 'user' }, 'test-secret', {
+    expiresIn: '15m',
+  });
 }
 
 describe('API Key Management Routes', () => {
@@ -115,9 +109,7 @@ describe('API Key Management Routes', () => {
         },
       ]);
 
-      const response = await request(app)
-        .get('/api/keys')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await request(app).get('/api/keys').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.keys).toHaveLength(2);
@@ -167,9 +159,7 @@ describe('API Key Management Routes', () => {
     });
 
     it('should return 401 without auth', async () => {
-      const response = await request(app)
-        .post('/api/keys')
-        .send({ label: 'test' });
+      const response = await request(app).post('/api/keys').send({ label: 'test' });
 
       expect(response.status).toBe(401);
     });
@@ -188,7 +178,9 @@ describe('API Key Management Routes', () => {
     });
 
     it('should return 404 for non-existent key', async () => {
-      const error = new Error('API key not found or already revoked') as Error & { statusCode?: number };
+      const error = new Error('API key not found or already revoked') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 404;
       mockRevokeApiKey.mockRejectedValue(error);
 

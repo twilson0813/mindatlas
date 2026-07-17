@@ -183,19 +183,21 @@ describe('Auth Service', () => {
       expect(insertCall[0]).toContain('INSERT INTO "user"');
       expect(insertCall[1]![0]).toBe('test@example.com');
       // The second param should be a bcrypt hash
-      expect((insertCall[1]![1] as string)).toMatch(/^\$2[aby]?\$12\$/);
+      expect(insertCall[1]![1] as string).toMatch(/^\$2[aby]?\$12\$/);
     });
 
     it('should throw if email already exists', async () => {
       mockQueryOne.mockResolvedValueOnce({ id: 'existing-id' });
 
-      await expect(register('existing@example.com', 'ValidPass1!'))
-        .rejects.toThrow('A user with this email already exists');
+      await expect(register('existing@example.com', 'ValidPass1!')).rejects.toThrow(
+        'A user with this email already exists',
+      );
     });
 
     it('should throw if password does not meet complexity rules', async () => {
-      await expect(register('test@example.com', 'weak'))
-        .rejects.toThrow('Password validation failed');
+      await expect(register('test@example.com', 'weak')).rejects.toThrow(
+        'Password validation failed',
+      );
     });
   });
 
@@ -233,8 +235,9 @@ describe('Auth Service', () => {
     it('should throw error for non-existent user', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
-      await expect(login('nonexistent@example.com', 'ValidPass1!'))
-        .rejects.toThrow('Invalid email or password');
+      await expect(login('nonexistent@example.com', 'ValidPass1!')).rejects.toThrow(
+        'Invalid email or password',
+      );
     });
 
     it('should throw error for wrong password', async () => {
@@ -242,8 +245,9 @@ describe('Auth Service', () => {
       mockQueryOne.mockResolvedValueOnce(createMockUser({ password_hash: hash }));
       mockQueryOne.mockResolvedValueOnce(null); // Update failed_attempts
 
-      await expect(login('test@example.com', 'WrongPass1!'))
-        .rejects.toThrow('Invalid email or password');
+      await expect(login('test@example.com', 'WrongPass1!')).rejects.toThrow(
+        'Invalid email or password',
+      );
     });
 
     it('should throw error for locked account within lockout period', async () => {
@@ -254,16 +258,17 @@ describe('Auth Service', () => {
           password_hash: hash,
           is_locked: true,
           locked_until: futureDate,
-        })
+        }),
       );
 
-      await expect(login('test@example.com', 'ValidPass1!'))
-        .rejects.toThrow('Account is locked');
+      await expect(login('test@example.com', 'ValidPass1!')).rejects.toThrow('Account is locked');
     });
 
     it('should reset failed attempts on successful login', async () => {
       const hash = await hashPassword('ValidPass1!');
-      mockQueryOne.mockResolvedValueOnce(createMockUser({ password_hash: hash, failed_attempts: 3 }));
+      mockQueryOne.mockResolvedValueOnce(
+        createMockUser({ password_hash: hash, failed_attempts: 3 }),
+      );
       mockQueryOne.mockResolvedValueOnce(null); // Reset failed attempts
 
       await login('test@example.com', 'ValidPass1!');
@@ -277,7 +282,11 @@ describe('Auth Service', () => {
   describe('refresh', () => {
     it('should return a new access token for a valid refresh token', async () => {
       const refreshToken = generateRefreshToken('user-123');
-      mockQueryOne.mockResolvedValueOnce({ id: 'user-123', email: 'test@example.com', role: 'user' });
+      mockQueryOne.mockResolvedValueOnce({
+        id: 'user-123',
+        email: 'test@example.com',
+        role: 'user',
+      });
 
       const result = await refresh(refreshToken);
 
@@ -288,38 +297,30 @@ describe('Auth Service', () => {
 
     it('should throw for an expired refresh token', async () => {
       // Create a token that has already expired
-      const expiredToken = jwt.sign(
-        { sub: 'user-123', type: 'refresh' },
-        config.jwtRefreshSecret,
-        { expiresIn: '-1s' }
-      );
+      const expiredToken = jwt.sign({ sub: 'user-123', type: 'refresh' }, config.jwtRefreshSecret, {
+        expiresIn: '-1s',
+      });
 
-      await expect(refresh(expiredToken))
-        .rejects.toThrow('Refresh token has expired');
+      await expect(refresh(expiredToken)).rejects.toThrow('Refresh token has expired');
     });
 
     it('should throw for an invalid token', async () => {
-      await expect(refresh('invalid.token.here'))
-        .rejects.toThrow('Invalid refresh token');
+      await expect(refresh('invalid.token.here')).rejects.toThrow('Invalid refresh token');
     });
 
     it('should throw for a token signed with wrong secret', async () => {
-      const badToken = jwt.sign(
-        { sub: 'user-123', type: 'refresh' },
-        'wrong-secret',
-        { expiresIn: '7d' }
-      );
+      const badToken = jwt.sign({ sub: 'user-123', type: 'refresh' }, 'wrong-secret', {
+        expiresIn: '7d',
+      });
 
-      await expect(refresh(badToken))
-        .rejects.toThrow('Invalid refresh token');
+      await expect(refresh(badToken)).rejects.toThrow('Invalid refresh token');
     });
 
     it('should throw if user no longer exists', async () => {
       const refreshToken = generateRefreshToken('deleted-user');
       mockQueryOne.mockResolvedValueOnce(null);
 
-      await expect(refresh(refreshToken))
-        .rejects.toThrow('User not found');
+      await expect(refresh(refreshToken)).rejects.toThrow('User not found');
     });
   });
 });

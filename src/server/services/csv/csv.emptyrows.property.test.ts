@@ -110,40 +110,43 @@ describe('Property 22: CSV Empty Content Row Skipping', () => {
       )
       .map(([totalRows, emptyIndices]) => {
         // Clamp empty indices to valid range and deduplicate
-        const validEmptyIndices = [...new Set(
-          emptyIndices.filter((i) => i < totalRows),
-        )];
+        const validEmptyIndices = [...new Set(emptyIndices.filter((i) => i < totalRows))];
         return { totalRows, emptyIndices: validEmptyIndices };
       })
       .filter(({ totalRows }) => totalRows > 0);
 
     fc.assert(
-      fc.property(placementArb, nonEmptyContentArb, emptyContentArb, ({ totalRows, emptyIndices }, nonEmptyContent, emptyContent) => {
-        // Build rows with empty content at specified indices
-        const rows: Record<string, string>[] = [];
-        for (let i = 0; i < totalRows; i++) {
-          if (emptyIndices.includes(i)) {
-            rows.push({ content: emptyContent, content_type: 'note' });
-          } else {
-            rows.push({ content: nonEmptyContent, content_type: 'note' });
+      fc.property(
+        placementArb,
+        nonEmptyContentArb,
+        emptyContentArb,
+        ({ totalRows, emptyIndices }, nonEmptyContent, emptyContent) => {
+          // Build rows with empty content at specified indices
+          const rows: Record<string, string>[] = [];
+          for (let i = 0; i < totalRows; i++) {
+            if (emptyIndices.includes(i)) {
+              rows.push({ content: emptyContent, content_type: 'note' });
+            } else {
+              rows.push({ content: nonEmptyContent, content_type: 'note' });
+            }
           }
-        }
 
-        // Process all rows and collect skipped row numbers
-        const skippedRowNumbers: number[] = [];
-        for (let i = 0; i < rows.length; i++) {
-          const result = parseRow(rows[i], i + 1);
-          if (result.type === 'skipped') {
-            skippedRowNumbers.push(result.rowNumber);
+          // Process all rows and collect skipped row numbers
+          const skippedRowNumbers: number[] = [];
+          for (let i = 0; i < rows.length; i++) {
+            const result = parseRow(rows[i], i + 1);
+            if (result.type === 'skipped') {
+              skippedRowNumbers.push(result.rowNumber);
+            }
           }
-        }
 
-        // Expected skipped positions (1-based)
-        const expectedSkipped = emptyIndices.map((i) => i + 1).sort((a, b) => a - b);
-        const actualSkipped = [...skippedRowNumbers].sort((a, b) => a - b);
+          // Expected skipped positions (1-based)
+          const expectedSkipped = emptyIndices.map((i) => i + 1).sort((a, b) => a - b);
+          const actualSkipped = [...skippedRowNumbers].sort((a, b) => a - b);
 
-        expect(actualSkipped).toEqual(expectedSkipped);
-      }),
+          expect(actualSkipped).toEqual(expectedSkipped);
+        },
+      ),
       { numRuns: 200 },
     );
   });

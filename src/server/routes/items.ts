@@ -2,10 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
-import {
-  validateItemCreation,
-  handleValidationErrors,
-} from '../middleware/validation.js';
+import { validateItemCreation, handleValidationErrors } from '../middleware/validation.js';
 import {
   createItem,
   getItem,
@@ -50,7 +47,7 @@ router.post(
       const statusCode = err.statusCode || 500;
       res.status(statusCode).json({ error: err.message });
     }
-  }
+  },
 );
 
 /**
@@ -70,9 +67,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       date_to: req.query.date_to as string | undefined,
       keyword: req.query.keyword as string | undefined,
       page: req.query.page ? parseInt(req.query.page as string, 10) : undefined,
-      page_size: req.query.page_size
-        ? parseInt(req.query.page_size as string, 10)
-        : undefined,
+      page_size: req.query.page_size ? parseInt(req.query.page_size as string, 10) : undefined,
     };
 
     const result = await listItems(userId, filters);
@@ -131,20 +126,17 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
  *
  * Requirements: 6.2
  */
-router.get(
-  '/:id/relationships',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const itemId = req.params.id as string;
-      const relationships = await getItemRelationships(userId, itemId);
-      res.json(relationships);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
-    }
+router.get('/:id/relationships', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const itemId = req.params.id as string;
+    const relationships = await getItemRelationships(userId, itemId);
+    res.json(relationships);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 export default router;

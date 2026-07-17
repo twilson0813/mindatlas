@@ -190,9 +190,7 @@ export function Dashboard({ items, stats, onItemClick }: DashboardProps) {
             </>
           )}
 
-          {activeSection === 'maps' && (
-            <p className="text-muted">Maps will be displayed here.</p>
-          )}
+          {activeSection === 'maps' && <p className="text-muted">Maps will be displayed here.</p>}
 
           {activeSection === 'upload' && (
             <p className="text-muted">Upload form will be displayed here.</p>

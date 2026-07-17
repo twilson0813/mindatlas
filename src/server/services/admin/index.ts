@@ -101,12 +101,12 @@ export async function logAuditEntry(
   action: string,
   targetType: string,
   targetId: string | null,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
 ): Promise<void> {
   await queryOne(
     `INSERT INTO audit_log (admin_user_id, action, target_type, target_id, details)
      VALUES ($1, $2, $3, $4, $5)`,
-    [adminId, action, targetType, targetId, JSON.stringify(details ?? {})]
+    [adminId, action, targetType, targetId, JSON.stringify(details ?? {})],
   );
 }
 
@@ -172,9 +172,7 @@ export async function getUserById(userId: string): Promise<AdminUserSummary | nu
  * Requirements: 17.6
  */
 export async function listPlans(): Promise<SubscriptionPlan[]> {
-  const rows = await queryMany<PlanRow>(
-    `SELECT * FROM subscription_plans ORDER BY created_at ASC`
-  );
+  const rows = await queryMany<PlanRow>(`SELECT * FROM subscription_plans ORDER BY created_at ASC`);
   return rows.map(mapPlanRow);
 }
 
@@ -183,10 +181,7 @@ export async function listPlans(): Promise<SubscriptionPlan[]> {
  * Requirements: 17.6
  */
 export async function getPlan(planId: string): Promise<SubscriptionPlan | null> {
-  const row = await queryOne<PlanRow>(
-    `SELECT * FROM subscription_plans WHERE id = $1`,
-    [planId]
-  );
+  const row = await queryOne<PlanRow>(`SELECT * FROM subscription_plans WHERE id = $1`, [planId]);
   return row ? mapPlanRow(row) : null;
 }
 
@@ -195,20 +190,17 @@ export async function getPlan(planId: string): Promise<SubscriptionPlan | null> 
  * Returns an array of feature key + enabled status for the plan.
  * Requirements: 17.7
  */
-export async function getFeatureEntitlements(
-  planId: string
-): Promise<FeatureToggle[]> {
-  const plan = await queryOne<{ id: string }>(
-    `SELECT id FROM subscription_plans WHERE id = $1`,
-    [planId]
-  );
+export async function getFeatureEntitlements(planId: string): Promise<FeatureToggle[]> {
+  const plan = await queryOne<{ id: string }>(`SELECT id FROM subscription_plans WHERE id = $1`, [
+    planId,
+  ]);
   if (!plan) {
     throw new Error('Plan not found');
   }
 
   const rows = await queryMany<{ feature_key: string; enabled: boolean }>(
     `SELECT feature_key, enabled FROM plan_entitlements WHERE plan_id = $1 ORDER BY feature_key`,
-    [planId]
+    [planId],
   );
 
   return rows.map((row) => ({
@@ -226,7 +218,11 @@ export async function createPlan(adminId: string, plan: PlanInput): Promise<Subs
     throw new Error('Plan name is required');
   }
 
-  if (!plan.displayName || typeof plan.displayName !== 'string' || plan.displayName.trim().length === 0) {
+  if (
+    !plan.displayName ||
+    typeof plan.displayName !== 'string' ||
+    plan.displayName.trim().length === 0
+  ) {
     throw new Error('Plan display name is required');
   }
 
@@ -238,14 +234,18 @@ export async function createPlan(adminId: string, plan: PlanInput): Promise<Subs
     throw new Error('Storage limit must be a positive number');
   }
 
-  if (typeof plan.aiQueriesPerDay !== 'number' || (plan.aiQueriesPerDay < -1 || plan.aiQueriesPerDay === 0)) {
+  if (
+    typeof plan.aiQueriesPerDay !== 'number' ||
+    plan.aiQueriesPerDay < -1 ||
+    plan.aiQueriesPerDay === 0
+  ) {
     throw new Error('AI queries per day must be a positive number or -1 for unlimited');
   }
 
   // Check for name uniqueness
   const existing = await queryOne<{ id: string }>(
     `SELECT id FROM subscription_plans WHERE name = $1`,
-    [plan.name.trim().toLowerCase()]
+    [plan.name.trim().toLowerCase()],
   );
   if (existing) {
     throw new Error(`A plan with name '${plan.name}' already exists`);
@@ -262,7 +262,7 @@ export async function createPlan(adminId: string, plan: PlanInput): Promise<Subs
       plan.priceMonthyCents,
       plan.storageLimitMb,
       plan.aiQueriesPerDay,
-    ]
+    ],
   );
 
   if (!row) {
@@ -287,13 +287,12 @@ export async function createPlan(adminId: string, plan: PlanInput): Promise<Subs
 export async function updatePlan(
   adminId: string,
   planId: string,
-  changes: PlanUpdate
+  changes: PlanUpdate,
 ): Promise<SubscriptionPlan> {
   // Verify plan exists
-  const existing = await queryOne<PlanRow>(
-    `SELECT * FROM subscription_plans WHERE id = $1`,
-    [planId]
-  );
+  const existing = await queryOne<PlanRow>(`SELECT * FROM subscription_plans WHERE id = $1`, [
+    planId,
+  ]);
   if (!existing) {
     throw new Error('Plan not found');
   }
@@ -333,7 +332,11 @@ export async function updatePlan(
   }
 
   if (changes.aiQueriesPerDay !== undefined) {
-    if (typeof changes.aiQueriesPerDay !== 'number' || (changes.aiQueriesPerDay < -1 || changes.aiQueriesPerDay === 0)) {
+    if (
+      typeof changes.aiQueriesPerDay !== 'number' ||
+      changes.aiQueriesPerDay < -1 ||
+      changes.aiQueriesPerDay === 0
+    ) {
       throw new Error('AI queries per day must be a positive number or -1 for unlimited');
     }
     setClauses.push(`ai_queries_per_day = $${paramIndex++}`);
@@ -349,7 +352,7 @@ export async function updatePlan(
 
   const row = await queryOne<PlanRow>(
     `UPDATE subscription_plans SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-    params
+    params,
   );
 
   if (!row) {
@@ -368,10 +371,9 @@ export async function updatePlan(
  * Requirements: 17.6
  */
 export async function deactivatePlan(adminId: string, planId: string): Promise<void> {
-  const existing = await queryOne<PlanRow>(
-    `SELECT * FROM subscription_plans WHERE id = $1`,
-    [planId]
-  );
+  const existing = await queryOne<PlanRow>(`SELECT * FROM subscription_plans WHERE id = $1`, [
+    planId,
+  ]);
   if (!existing) {
     throw new Error('Plan not found');
   }
@@ -382,7 +384,7 @@ export async function deactivatePlan(adminId: string, planId: string): Promise<v
 
   await queryOne(
     `UPDATE subscription_plans SET is_active = false, updated_at = NOW() WHERE id = $1`,
-    [planId]
+    [planId],
   );
 
   await logAuditEntry(adminId, 'plan.deactivate', 'subscription_plan', planId, {
@@ -404,12 +406,12 @@ export async function deactivatePlan(adminId: string, planId: string): Promise<v
 export async function setFeatureEntitlements(
   adminId: string,
   planId: string,
-  features: FeatureToggle[]
+  features: FeatureToggle[],
 ): Promise<void> {
   // Verify plan exists
   const plan = await queryOne<{ id: string; name: string }>(
     `SELECT id, name FROM subscription_plans WHERE id = $1`,
-    [planId]
+    [planId],
   );
   if (!plan) {
     throw new Error('Plan not found');
@@ -439,7 +441,7 @@ export async function setFeatureEntitlements(
        VALUES ($1, $2, $3)
        ON CONFLICT ON CONSTRAINT plan_entitlements_plan_feature_unique
        DO UPDATE SET enabled = EXCLUDED.enabled`,
-      [planId, toggle.featureKey, toggle.enabled]
+      [planId, toggle.featureKey, toggle.enabled],
     );
   }
 
@@ -453,7 +455,7 @@ export async function setFeatureEntitlements(
 
   log.info(
     { adminId, planId, planName: plan.name, featureCount: features.length },
-    'Feature entitlements updated and cache invalidated'
+    'Feature entitlements updated and cache invalidated',
   );
 }
 
@@ -484,7 +486,7 @@ export async function getSubscriptionMetrics(): Promise<SubscriptionMetrics> {
      FROM subscriptions s
      JOIN subscription_plans sp ON sp.id = s.plan_id
      WHERE s.status = 'active'
-     GROUP BY sp.name`
+     GROUP BY sp.name`,
   );
 
   const counts: Record<string, number> = {};
@@ -497,7 +499,7 @@ export async function getSubscriptionMetrics(): Promise<SubscriptionMetrics> {
     `SELECT COALESCE(SUM(sp.price_monthly_cents), 0)::text AS mrr
      FROM subscriptions s
      JOIN subscription_plans sp ON sp.id = s.plan_id
-     WHERE s.status = 'active'`
+     WHERE s.status = 'active'`,
   );
   const mrr = parseInt(mrrRow?.mrr ?? '0', 10);
 
@@ -505,23 +507,24 @@ export async function getSubscriptionMetrics(): Promise<SubscriptionMetrics> {
   const churnRow = await queryOne<{ cancelled_count: string; total_active: string }>(
     `SELECT
        (SELECT COUNT(*)::text FROM subscriptions WHERE canceled_at >= NOW() - INTERVAL '30 days') AS cancelled_count,
-       (SELECT COUNT(*)::text FROM subscriptions WHERE status = 'active' OR canceled_at >= NOW() - INTERVAL '30 days') AS total_active`
+       (SELECT COUNT(*)::text FROM subscriptions WHERE status = 'active' OR canceled_at >= NOW() - INTERVAL '30 days') AS total_active`,
   );
   const cancelledCount = parseInt(churnRow?.cancelled_count ?? '0', 10);
   const totalActive = parseInt(churnRow?.total_active ?? '1', 10);
-  const churnRate = totalActive > 0 ? Math.round((cancelledCount / totalActive) * 10000) / 10000 : 0;
+  const churnRate =
+    totalActive > 0 ? Math.round((cancelledCount / totalActive) * 10000) / 10000 : 0;
 
   // Upgrade count in last 30 days (audit log entries for plan upgrades)
   const upgradeRow = await queryOne<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM audit_log
-     WHERE action = 'plan.upgrade' AND created_at >= NOW() - INTERVAL '30 days'`
+     WHERE action = 'plan.upgrade' AND created_at >= NOW() - INTERVAL '30 days'`,
   );
   const upgradeCount30d = parseInt(upgradeRow?.count ?? '0', 10);
 
   // Downgrade count in last 30 days
   const downgradeRow = await queryOne<{ count: string }>(
     `SELECT COUNT(*)::text AS count FROM audit_log
-     WHERE action = 'plan.downgrade' AND created_at >= NOW() - INTERVAL '30 days'`
+     WHERE action = 'plan.downgrade' AND created_at >= NOW() - INTERVAL '30 days'`,
   );
   const downgradeCount30d = parseInt(downgradeRow?.count ?? '0', 10);
 
@@ -535,7 +538,6 @@ export async function getSubscriptionMetrics(): Promise<SubscriptionMetrics> {
     downgradeCount30d,
   };
 }
-
 
 // ─── Admin Data Access Layer (Content Isolation) ─────────────────────────────
 
@@ -573,7 +575,7 @@ export class AdminDataAccess {
       if (field in sanitized) {
         log.error(
           { field },
-          `SECURITY VIOLATION: Content field "${field}" found in admin response — stripping`
+          `SECURITY VIOLATION: Content field "${field}" found in admin response — stripping`,
         );
         delete sanitized[field];
       }
@@ -587,7 +589,7 @@ export class ContentAccessViolationError extends Error {
 
   constructor(field: string) {
     super(
-      `Admin content isolation violation: attempted to access "${field}". Admin service must never access user content.`
+      `Admin content isolation violation: attempted to access "${field}". Admin service must never access user content.`,
     );
     this.name = 'ContentAccessViolationError';
     this.field = field;
@@ -680,9 +682,7 @@ export interface PaginatedAuditEntries {
  *
  * Requirements: 17.2
  */
-export async function listUsers(
-  filters: AdminUserFilters = {}
-): Promise<PaginatedAdminUsers> {
+export async function listUsers(filters: AdminUserFilters = {}): Promise<PaginatedAdminUsers> {
   const {
     page = 1,
     pageSize = 25,
@@ -715,8 +715,7 @@ export async function listUsers(
     paramIndex++;
   }
 
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   // Validate sort column to prevent SQL injection
   const validSortColumns: Record<string, string> = {
@@ -797,7 +796,7 @@ export async function listUsers(
 export async function disableAccount(
   adminId: string,
   userId: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
   log.info({ adminId, userId, reason }, 'Disabling user account');
 
@@ -816,7 +815,7 @@ export async function disableAccount(
 export async function deleteAccount(
   adminId: string,
   userId: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
   log.info({ adminId, userId, reason }, 'Marking user account for deletion');
 
@@ -837,10 +836,7 @@ export async function deleteAccount(
  *
  * Requirements: 17.2
  */
-export async function unlockAccount(
-  adminId: string,
-  userId: string
-): Promise<void> {
+export async function unlockAccount(adminId: string, userId: string): Promise<void> {
   log.info({ adminId, userId }, 'Unlocking user account');
 
   const sql = `UPDATE users SET is_locked = false, locked_until = NULL, failed_attempts = 0, updated_at = NOW() WHERE id = $1`;
@@ -858,38 +854,38 @@ export async function unlockAccount(
  */
 export async function getSystemMetrics(): Promise<SystemMetrics> {
   const totalUsersResult = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM users`
+    `SELECT COUNT(*)::integer AS count FROM users`,
   );
 
   const activeDaily = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '1 day'`
+    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '1 day'`,
   );
   const activeWeekly = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '7 days'`
+    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '7 days'`,
   );
   const activeMonthly = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '30 days'`
+    `SELECT COUNT(*)::integer AS count FROM users WHERE updated_at >= NOW() - INTERVAL '30 days'`,
   );
 
   const totalCards = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM items WHERE is_deleted = false`
+    `SELECT COUNT(*)::integer AS count FROM items WHERE is_deleted = false`,
   );
 
   const apiVolume24h = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE created_at >= NOW() - INTERVAL '1 day'`
+    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE created_at >= NOW() - INTERVAL '1 day'`,
   );
   const apiVolume7d = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE created_at >= NOW() - INTERVAL '7 days'`
+    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE created_at >= NOW() - INTERVAL '7 days'`,
   );
 
   // AI queue depth: default 0, actual value requires Redis query
   const aiQueueDepth = 0;
 
   const errors24h = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE action ILIKE '%error%' AND created_at >= NOW() - INTERVAL '1 day'`
+    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE action ILIKE '%error%' AND created_at >= NOW() - INTERVAL '1 day'`,
   );
   const errors7d = await queryOne<{ count: number }>(
-    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE action ILIKE '%error%' AND created_at >= NOW() - INTERVAL '7 days'`
+    `SELECT COUNT(*)::integer AS count FROM audit_log WHERE action ILIKE '%error%' AND created_at >= NOW() - INTERVAL '7 days'`,
   );
 
   return {
@@ -918,7 +914,7 @@ export async function getSystemMetrics(): Promise<SystemMetrics> {
 export async function moderateAccount(
   adminId: string,
   userId: string,
-  action: ModerationAction
+  action: ModerationAction,
 ): Promise<void> {
   log.info({ adminId, userId, action }, 'Moderating user account');
 
@@ -939,18 +935,8 @@ export async function moderateAccount(
  *
  * Requirements: 17.10
  */
-export async function getAuditTrail(
-  filters: AuditFilters = {}
-): Promise<PaginatedAuditEntries> {
-  const {
-    page = 1,
-    pageSize = 50,
-    adminUserId,
-    action,
-    targetType,
-    startDate,
-    endDate,
-  } = filters;
+export async function getAuditTrail(filters: AuditFilters = {}): Promise<PaginatedAuditEntries> {
+  const { page = 1, pageSize = 50, adminUserId, action, targetType, startDate, endDate } = filters;
 
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -986,8 +972,7 @@ export async function getAuditTrail(
     paramIndex++;
   }
 
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const countSql = `SELECT COUNT(*)::integer AS total FROM audit_log ${whereClause}`;
   const countResult = await queryOne<{ total: number }>(countSql, params);

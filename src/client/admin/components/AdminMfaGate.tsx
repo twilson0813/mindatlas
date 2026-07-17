@@ -44,7 +44,7 @@ export function AdminMfaGate({ children }: AdminMfaGateProps) {
         setLoading(false);
       }
     },
-    [mfaCode]
+    [mfaCode],
   );
 
   if (verified) {

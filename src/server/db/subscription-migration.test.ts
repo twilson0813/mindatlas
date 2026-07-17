@@ -165,7 +165,7 @@ describe('006_create-subscription-tables migration', () => {
 
       it('should have unique constraint on plan_id + feature_key', () => {
         const constraint = pgm._constraints.find(
-          (c) => c.name === 'plan_entitlements_plan_feature_unique'
+          (c) => c.name === 'plan_entitlements_plan_feature_unique',
         );
         expect(constraint).toBeDefined();
         expect(constraint!.expression).toMatchObject({ unique: ['plan_id', 'feature_key'] });
@@ -376,7 +376,7 @@ describe('006_create-subscription-tables migration', () => {
     describe('seed data', () => {
       it('should seed three default plans: free, pro, enterprise', () => {
         const planInsert = pgm._sqlStatements.find((s) =>
-          s.includes('INSERT INTO subscription_plans')
+          s.includes('INSERT INTO subscription_plans'),
         );
         expect(planInsert).toBeDefined();
         expect(planInsert).toContain("'free'");
@@ -386,28 +386,28 @@ describe('006_create-subscription-tables migration', () => {
 
       it('should seed Free plan with 500 MB storage and 10 AI queries/day', () => {
         const planInsert = pgm._sqlStatements.find((s) =>
-          s.includes('INSERT INTO subscription_plans')
+          s.includes('INSERT INTO subscription_plans'),
         );
         expect(planInsert).toContain("'free', 'Free', 0, 500, 10");
       });
 
       it('should seed Pro plan with 5120 MB storage and 100 AI queries/day', () => {
         const planInsert = pgm._sqlStatements.find((s) =>
-          s.includes('INSERT INTO subscription_plans')
+          s.includes('INSERT INTO subscription_plans'),
         );
         expect(planInsert).toContain("'pro', 'Pro', 1999, 5120, 100");
       });
 
       it('should seed Enterprise plan with 51200 MB storage and unlimited (-1) AI queries', () => {
         const planInsert = pgm._sqlStatements.find((s) =>
-          s.includes('INSERT INTO subscription_plans')
+          s.includes('INSERT INTO subscription_plans'),
         );
         expect(planInsert).toContain("'enterprise', 'Enterprise', 4999, 51200, -1");
       });
 
       it('should seed Free plan feature entitlements', () => {
         const freeEntitlements = pgm._sqlStatements.find(
-          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'free'")
+          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'free'"),
         );
         expect(freeEntitlements).toBeDefined();
         expect(freeEntitlements).toContain('ai.categorization');
@@ -415,7 +415,7 @@ describe('006_create-subscription-tables migration', () => {
 
       it('should seed Pro plan feature entitlements with all input channels and AI features', () => {
         const proEntitlements = pgm._sqlStatements.find(
-          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'pro'")
+          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'pro'"),
         );
         expect(proEntitlements).toBeDefined();
         expect(proEntitlements).toContain('ai.categorization');
@@ -429,7 +429,7 @@ describe('006_create-subscription-tables migration', () => {
 
       it('should seed Enterprise plan feature entitlements with all features', () => {
         const enterpriseEntitlements = pgm._sqlStatements.find(
-          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'enterprise'")
+          (s) => s.includes('plan_entitlements') && s.includes("sp.name = 'enterprise'"),
         );
         expect(enterpriseEntitlements).toBeDefined();
         expect(enterpriseEntitlements).toContain('ai.categorization');

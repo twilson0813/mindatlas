@@ -43,7 +43,7 @@ const categoryArb = fc.constantFrom(...validCategories);
 const featureKeyArb = fc
   .tuple(
     fc.constantFrom('input', 'ai', 'integration', 'export', 'advanced', 'custom'),
-    fc.string({ minLength: 1, maxLength: 20, unit: 'grapheme' }).filter((s) => /^[a-z_]+$/.test(s))
+    fc.string({ minLength: 1, maxLength: 20, unit: 'grapheme' }).filter((s) => /^[a-z_]+$/.test(s)),
   )
   .map(([prefix, suffix]) => `${prefix}.${suffix}`);
 
@@ -145,35 +145,31 @@ describe('Property 28: Feature Registry Auto-Registration and Uniqueness', () =>
 
   it('re-registering the same key does not increase count (idempotent)', () => {
     fc.assert(
-      fc.property(
-        uniqueFeatureListArb,
-        fc.integer({ min: 2, max: 5 }),
-        (features, repeatCount) => {
-          clearRegistry();
+      fc.property(uniqueFeatureListArb, fc.integer({ min: 2, max: 5 }), (features, repeatCount) => {
+        clearRegistry();
 
-          // Register all features once
+        // Register all features once
+        for (const feature of features) {
+          register(feature);
+        }
+        const countAfterFirst = getCount();
+
+        // Re-register all features multiple times
+        for (let i = 0; i < repeatCount; i++) {
           for (const feature of features) {
             register(feature);
           }
-          const countAfterFirst = getCount();
+        }
+        const countAfterRepeats = getCount();
 
-          // Re-register all features multiple times
-          for (let i = 0; i < repeatCount; i++) {
-            for (const feature of features) {
-              register(feature);
-            }
-          }
-          const countAfterRepeats = getCount();
+        // Count must not change after re-registration
+        expect(countAfterRepeats).toBe(countAfterFirst);
+        expect(countAfterRepeats).toBe(features.length);
 
-          // Count must not change after re-registration
-          expect(countAfterRepeats).toBe(countAfterFirst);
-          expect(countAfterRepeats).toBe(features.length);
-
-          // getAll() still returns the same number of entries
-          const all = getAll();
-          expect(all.length).toBe(features.length);
-        },
-      ),
+        // getAll() still returns the same number of entries
+        const all = getAll();
+        expect(all.length).toBe(features.length);
+      }),
       { numRuns: 200 },
     );
   });

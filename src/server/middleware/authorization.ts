@@ -47,7 +47,7 @@ export function requireOwnership(resourceType: ResourceType) {
     try {
       const resource = await queryOne<{ user_id: string }>(
         `SELECT user_id FROM ${tableName} WHERE id = $1`,
-        [resourceId]
+        [resourceId],
       );
 
       if (!resource) {

@@ -25,7 +25,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const currentSection = NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.key || 'users';
+  const currentSection =
+    NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.key || 'users';
 
   const handleNavClick = (path: string) => {
     navigate(path);
@@ -42,10 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
 
       {/* Sidebar */}
-      <aside
-        className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}
-        aria-label="Admin navigation"
-      >
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Admin navigation">
         <div className="admin-sidebar-header">
           <h1>Admin Console</h1>
         </div>

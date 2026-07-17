@@ -34,12 +34,8 @@ describe('MapViewer', () => {
     const emptyMap: MapData = { nodes: [], edges: [] };
     render(<MapViewer map={emptyMap} />);
 
-    expect(
-      screen.getByText(/no items to display/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('img', { name: /empty map visualization/i })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/no items to display/i)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /empty map visualization/i })).toBeInTheDocument();
   });
 
   it('renders node count and connection count in static fallback', () => {
@@ -69,7 +65,7 @@ describe('MapViewer', () => {
     render(<MapViewer map={mockMap} />);
 
     expect(
-      screen.getByRole('img', { name: /knowledge map with 3 items and 2 connections/i })
+      screen.getByRole('img', { name: /knowledge map with 3 items and 2 connections/i }),
     ).toBeInTheDocument();
   });
 

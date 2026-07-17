@@ -53,7 +53,7 @@ describe('User Integration Credential Store', () => {
       expect(result).toBeNull();
       expect(mockQueryOne).toHaveBeenCalledWith(
         'SELECT credentials_encrypted, metadata FROM user_integrations WHERE user_id = $1 AND provider = $2',
-        ['user-123', 'notion']
+        ['user-123', 'notion'],
       );
     });
 
@@ -94,7 +94,10 @@ describe('User Integration Credential Store', () => {
       await getUserIntegration('user-abc', 'n8n');
 
       // Verify we can manually seed the cache with the expected key format
-      const cachedValue = { credentials: { webhookUrl: 'http://test', apiKey: 'key-1' }, metadata: null };
+      const cachedValue = {
+        credentials: { webhookUrl: 'http://test', apiKey: 'key-1' },
+        metadata: null,
+      };
       credentialCache.set('user:user-abc:n8n', cachedValue);
 
       // Now the function should return cached
@@ -125,7 +128,7 @@ describe('User Integration Credential Store', () => {
       expect(mockEncrypt).toHaveBeenCalledWith(JSON.stringify(creds));
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO user_integrations'),
-        ['user-123', 'notion', `encrypted:${JSON.stringify(creds)}`, null]
+        ['user-123', 'notion', `encrypted:${JSON.stringify(creds)}`, null],
       );
     });
 
@@ -138,7 +141,7 @@ describe('User Integration Credential Store', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO user_integrations'),
-        ['user-123', 'notion', `encrypted:${JSON.stringify(creds)}`, JSON.stringify(metadata)]
+        ['user-123', 'notion', `encrypted:${JSON.stringify(creds)}`, JSON.stringify(metadata)],
       );
     });
 
@@ -146,7 +149,10 @@ describe('User Integration Credential Store', () => {
       mockQueryOne.mockResolvedValue(null);
 
       // Pre-seed cache
-      credentialCache.set('user:user-123:notion', { credentials: { accessToken: 'old' }, metadata: null });
+      credentialCache.set('user:user-123:notion', {
+        credentials: { accessToken: 'old' },
+        metadata: null,
+      });
 
       await setUserIntegration('user-123', 'notion', { accessToken: 'new_token' });
 
@@ -173,7 +179,7 @@ describe('User Integration Credential Store', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         'DELETE FROM user_integrations WHERE user_id = $1 AND provider = $2',
-        ['user-123', 'notion']
+        ['user-123', 'notion'],
       );
     });
 
@@ -181,7 +187,10 @@ describe('User Integration Credential Store', () => {
       mockQueryOne.mockResolvedValue(null);
 
       // Pre-seed cache
-      credentialCache.set('user:user-123:n8n', { credentials: { webhookUrl: 'x', apiKey: 'y' }, metadata: null });
+      credentialCache.set('user:user-123:n8n', {
+        credentials: { webhookUrl: 'x', apiKey: 'y' },
+        metadata: null,
+      });
 
       await deleteUserIntegration('user-123', 'n8n');
 
@@ -197,7 +206,8 @@ describe('User Integration Credential Store', () => {
 
   describe('registerProviderSchema', () => {
     it('should store a validator for the given provider', () => {
-      const validator = (data: unknown) => typeof data === 'object' && data !== null && 'apiKey' in data;
+      const validator = (data: unknown) =>
+        typeof data === 'object' && data !== null && 'apiKey' in data;
 
       registerProviderSchema('custom-provider', validator);
 
@@ -262,7 +272,7 @@ describe('User Integration Credential Store', () => {
       expect(mockEncrypt).toHaveBeenCalledWith(JSON.stringify(creds));
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO user_integrations'),
-        ['user-123', 'webhooks', `encrypted:${JSON.stringify(creds)}`, null]
+        ['user-123', 'webhooks', `encrypted:${JSON.stringify(creds)}`, null],
       );
     });
 
@@ -275,7 +285,7 @@ describe('User Integration Credential Store', () => {
       registerProviderSchema('validated-provider', validator);
 
       await expect(
-        setGenericUserIntegration('user-1', 'validated-provider', { apiKey: 'key-123' })
+        setGenericUserIntegration('user-1', 'validated-provider', { apiKey: 'key-123' }),
       ).resolves.not.toThrow();
     });
 
@@ -287,7 +297,7 @@ describe('User Integration Credential Store', () => {
       registerProviderSchema('strict-provider', validator);
 
       await expect(
-        setGenericUserIntegration('user-1', 'strict-provider', { apiKey: 'key-123' })
+        setGenericUserIntegration('user-1', 'strict-provider', { apiKey: 'key-123' }),
       ).rejects.toThrow('Credentials do not match registered schema for provider: strict-provider');
     });
 
@@ -296,13 +306,16 @@ describe('User Integration Credential Store', () => {
 
       // No schema registered for 'unregistered'
       await expect(
-        setGenericUserIntegration('user-1', 'unregistered', { anything: true })
+        setGenericUserIntegration('user-1', 'unregistered', { anything: true }),
       ).resolves.not.toThrow();
     });
 
     it('should invalidate cache after write', async () => {
       mockQueryOne.mockResolvedValue(null);
-      credentialCache.set('user:user-1:my-provider', { credentials: { old: true }, metadata: null });
+      credentialCache.set('user:user-1:my-provider', {
+        credentials: { old: true },
+        metadata: null,
+      });
 
       await setGenericUserIntegration('user-1', 'my-provider', { new: true });
 
@@ -317,7 +330,7 @@ describe('User Integration Credential Store', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO user_integrations'),
-        ['user-1', 'custom', expect.any(String), JSON.stringify(metadata)]
+        ['user-1', 'custom', expect.any(String), JSON.stringify(metadata)],
       );
     });
   });

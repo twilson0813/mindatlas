@@ -19,12 +19,10 @@ describe('Property 5: Item Payload Validation', () => {
   // Generator for valid metadata (JSON objects)
   const validMetadataArb = fc.oneof(
     fc.constant(undefined),
-    fc.dictionary(fc.string({ minLength: 1, maxLength: 20 }), fc.oneof(
-      fc.string(),
-      fc.integer(),
-      fc.boolean(),
-      fc.constant(null),
-    )),
+    fc.dictionary(
+      fc.string({ minLength: 1, maxLength: 20 }),
+      fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
+    ),
   );
 
   it('should accept payloads with non-empty content and valid content_type', () => {
@@ -119,7 +117,8 @@ describe('Property 5: Item Payload Validation', () => {
       fc.float(),
     );
 
-    const invalidMetaPayloadArb = fc.tuple(nonEmptyContentArb, validContentTypeArb, invalidMetadataArb)
+    const invalidMetaPayloadArb = fc
+      .tuple(nonEmptyContentArb, validContentTypeArb, invalidMetadataArb)
       .map(([content, content_type, metadata]) => ({
         content,
         content_type,

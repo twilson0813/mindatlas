@@ -57,7 +57,7 @@ export async function processPurgeJob(job: Job): Promise<PurgeJobResult> {
     `SELECT id, user_id, file_path
      FROM items
      WHERE is_deleted = true
-       AND deleted_at < NOW() - INTERVAL '24 hours'`
+       AND deleted_at < NOW() - INTERVAL '24 hours'`,
   );
 
   if (purgableItems.length === 0) {
@@ -65,7 +65,10 @@ export async function processPurgeJob(job: Job): Promise<PurgeJobResult> {
     return { purgedCount: 0, failedCount: 0, errors: [] };
   }
 
-  log.info({ jobId: job.id, eligibleCount: purgableItems.length }, 'Found items eligible for purge');
+  log.info(
+    { jobId: job.id, eligibleCount: purgableItems.length },
+    'Found items eligible for purge',
+  );
 
   let purgedCount = 0;
   let failedCount = 0;
@@ -92,7 +95,7 @@ export async function processPurgeJob(job: Job): Promise<PurgeJobResult> {
 
   log.info(
     { jobId: job.id, purgedCount, failedCount, totalEligible: purgableItems.length },
-    'Purge job completed'
+    'Purge job completed',
   );
 
   return { purgedCount, failedCount, errors };
@@ -118,17 +121,13 @@ export async function startPurgeWorker(): Promise<Worker> {
   await purgeDeletedItemsQueue.upsertJobScheduler(
     'purge-deleted-items-scheduler',
     { pattern: '0 * * * *' }, // Every hour at minute 0
-    { name: 'purge-deleted-items' }
+    { name: 'purge-deleted-items' },
   );
 
-  purgeWorker = new Worker(
-    QUEUE_NAMES.PURGE_DELETED_ITEMS,
-    processPurgeJob,
-    {
-      connection: getWorkerConnection(),
-      concurrency: 1, // Only one purge job at a time
-    }
-  );
+  purgeWorker = new Worker(QUEUE_NAMES.PURGE_DELETED_ITEMS, processPurgeJob, {
+    connection: getWorkerConnection(),
+    concurrency: 1, // Only one purge job at a time
+  });
 
   // ─── Event Handlers ──────────────────────────────────────────────────────
 
@@ -148,7 +147,10 @@ export async function startPurgeWorker(): Promise<Worker> {
     log.error({ error: err.message }, 'Purge worker error');
   });
 
-  log.info({ queue: QUEUE_NAMES.PURGE_DELETED_ITEMS, schedule: 'every hour' }, 'Purge worker started');
+  log.info(
+    { queue: QUEUE_NAMES.PURGE_DELETED_ITEMS, schedule: 'every hour' },
+    'Purge worker started',
+  );
 
   return purgeWorker;
 }

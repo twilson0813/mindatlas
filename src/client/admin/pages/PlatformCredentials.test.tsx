@@ -243,7 +243,7 @@ describe('PlatformCredentials', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('You do not have permission to manage platform credentials.')
+        screen.getByText('You do not have permission to manage platform credentials.'),
       ).toBeInTheDocument();
     });
   });

@@ -95,7 +95,7 @@ export const credentialCache = new CredentialCache();
  * Throws if provider is not configured.
  */
 export async function getPlatformCredentials<K extends keyof PlatformProviderMap>(
-  provider: K
+  provider: K,
 ): Promise<PlatformProviderMap[K]> {
   const cacheKey = `platform:${provider}`;
   const cached = credentialCache.get<PlatformProviderMap[K]>(cacheKey);
@@ -103,7 +103,7 @@ export async function getPlatformCredentials<K extends keyof PlatformProviderMap
 
   const row = await queryOne<{ credentials_encrypted: string }>(
     'SELECT credentials_encrypted FROM platform_credentials WHERE provider = $1',
-    [provider]
+    [provider],
   );
 
   if (!row) {
@@ -136,7 +136,7 @@ export async function getStripeCredentials(): Promise<StripeCredentials> {
  */
 export async function setPlatformCredentials<K extends keyof PlatformProviderMap>(
   provider: K,
-  credentials: PlatformProviderMap[K]
+  credentials: PlatformProviderMap[K],
 ): Promise<void> {
   const encrypted = encrypt(JSON.stringify(credentials));
 
@@ -145,7 +145,7 @@ export async function setPlatformCredentials<K extends keyof PlatformProviderMap
      VALUES ($1, $2, NOW())
      ON CONFLICT (provider)
      DO UPDATE SET credentials_encrypted = EXCLUDED.credentials_encrypted, updated_at = NOW()`,
-    [provider, encrypted]
+    [provider, encrypted],
   );
 
   credentialCache.invalidate(`platform:${provider}`);
@@ -161,15 +161,21 @@ export async function setPlatformCredentials<K extends keyof PlatformProviderMap
  */
 export async function getUserIntegration<K extends keyof UserProviderMap>(
   userId: string,
-  provider: K
+  provider: K,
 ): Promise<{ credentials: UserProviderMap[K]; metadata: Record<string, unknown> | null } | null> {
   const cacheKey = `user:${userId}:${provider}`;
-  const cached = credentialCache.get<{ credentials: UserProviderMap[K]; metadata: Record<string, unknown> | null }>(cacheKey);
+  const cached = credentialCache.get<{
+    credentials: UserProviderMap[K];
+    metadata: Record<string, unknown> | null;
+  }>(cacheKey);
   if (cached) return cached;
 
-  const row = await queryOne<{ credentials_encrypted: string; metadata: Record<string, unknown> | null }>(
+  const row = await queryOne<{
+    credentials_encrypted: string;
+    metadata: Record<string, unknown> | null;
+  }>(
     'SELECT credentials_encrypted, metadata FROM user_integrations WHERE user_id = $1 AND provider = $2',
-    [userId, provider]
+    [userId, provider],
   );
 
   if (!row) return null;
@@ -189,7 +195,7 @@ export async function setUserIntegration<K extends keyof UserProviderMap>(
   userId: string,
   provider: K,
   credentials: UserProviderMap[K],
-  metadata?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null,
 ): Promise<void> {
   const encrypted = encrypt(JSON.stringify(credentials));
 
@@ -200,7 +206,7 @@ export async function setUserIntegration<K extends keyof UserProviderMap>(
      DO UPDATE SET credentials_encrypted = EXCLUDED.credentials_encrypted,
                    metadata = COALESCE(EXCLUDED.metadata, user_integrations.metadata),
                    updated_at = NOW()`,
-    [userId, provider, encrypted, metadata ? JSON.stringify(metadata) : null]
+    [userId, provider, encrypted, metadata ? JSON.stringify(metadata) : null],
   );
 
   credentialCache.invalidate(`user:${userId}:${provider}`);
@@ -211,10 +217,10 @@ export async function setUserIntegration<K extends keyof UserProviderMap>(
  * Removes a user integration and invalidates its cache.
  */
 export async function deleteUserIntegration(userId: string, provider: string): Promise<void> {
-  await queryOne(
-    'DELETE FROM user_integrations WHERE user_id = $1 AND provider = $2',
-    [userId, provider]
-  );
+  await queryOne('DELETE FROM user_integrations WHERE user_id = $1 AND provider = $2', [
+    userId,
+    provider,
+  ]);
   credentialCache.invalidate(`user:${userId}:${provider}`);
   log.info({ userId, provider }, 'User integration removed');
 }
@@ -241,11 +247,17 @@ export function registerProviderSchema(provider: string, validator: SchemaValida
  */
 export async function getGenericUserIntegration(
   userId: string,
-  provider: string
-): Promise<{ credentials: Record<string, unknown>; metadata: Record<string, unknown> | null } | null> {
-  const row = await queryOne<{ credentials_encrypted: string; metadata: Record<string, unknown> | null }>(
+  provider: string,
+): Promise<{
+  credentials: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
+} | null> {
+  const row = await queryOne<{
+    credentials_encrypted: string;
+    metadata: Record<string, unknown> | null;
+  }>(
     'SELECT credentials_encrypted, metadata FROM user_integrations WHERE user_id = $1 AND provider = $2',
-    [userId, provider]
+    [userId, provider],
   );
 
   if (!row) return null;
@@ -262,7 +274,7 @@ export async function setGenericUserIntegration(
   userId: string,
   provider: string,
   credentials: Record<string, unknown>,
-  metadata?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null,
 ): Promise<void> {
   // Validate against registered schema if available
   const validator = providerSchemas.get(provider);
@@ -278,7 +290,7 @@ export async function setGenericUserIntegration(
      DO UPDATE SET credentials_encrypted = EXCLUDED.credentials_encrypted,
                    metadata = COALESCE(EXCLUDED.metadata, user_integrations.metadata),
                    updated_at = NOW()`,
-    [userId, provider, encrypted, metadata ? JSON.stringify(metadata) : null]
+    [userId, provider, encrypted, metadata ? JSON.stringify(metadata) : null],
   );
 
   credentialCache.invalidate(`user:${userId}:${provider}`);

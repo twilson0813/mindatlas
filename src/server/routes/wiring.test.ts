@@ -110,7 +110,16 @@ vi.mock('../services/items/index.js', () => ({
   listItems: vi.fn().mockResolvedValue({ items: [], total: 0 }),
   deleteItem: vi.fn().mockResolvedValue(undefined),
   getItemRelationships: vi.fn().mockResolvedValue([]),
-  VALID_CONTENT_TYPES: ['plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom'],
+  VALID_CONTENT_TYPES: [
+    'plain_text',
+    'link',
+    'code_snippet',
+    'note',
+    'task',
+    'idea',
+    'file',
+    'custom',
+  ],
   validateItemInput: vi.fn(),
 }));
 

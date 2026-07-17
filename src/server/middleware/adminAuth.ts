@@ -60,7 +60,7 @@ export async function getAdminUser(userId: string): Promise<AdminUser | null> {
      FROM admin_users au
      JOIN admin_roles ar ON ar.id = au.role_id
      WHERE au.user_id = $1`,
-    [userId]
+    [userId],
   );
 
   return result;
@@ -77,11 +77,7 @@ export async function getAdminUser(userId: string): Promise<AdminUser | null> {
  * 4. If MFA enabled → require valid X-MFA-Token header
  * 5. Attach admin user info to request for downstream handlers
  */
-export async function requireAdmin(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   // Step 1: Ensure user is authenticated
   if (!req.user?.sub) {
     res.status(401).json({ error: 'Authentication required' });
@@ -97,7 +93,7 @@ export async function requireAdmin(
     if (!adminUser) {
       logger.warn(
         { userId, path: req.path, method: req.method },
-        'Non-admin user attempted to access admin route'
+        'Non-admin user attempted to access admin route',
       );
       res.status(403).json({ error: 'Forbidden: Admin access required' });
       return;
@@ -110,7 +106,7 @@ export async function requireAdmin(
       if (!mfaToken) {
         logger.warn(
           { userId, adminId: adminUser.id, path: req.path },
-          'Admin access attempt without MFA token'
+          'Admin access attempt without MFA token',
         );
         res.status(401).json({ error: 'MFA verification required' });
         return;
@@ -119,7 +115,7 @@ export async function requireAdmin(
       if (!adminUser.mfa_secret) {
         logger.error(
           { userId, adminId: adminUser.id },
-          'Admin has MFA enabled but no secret configured'
+          'Admin has MFA enabled but no secret configured',
         );
         res.status(500).json({ error: 'MFA configuration error' });
         return;
@@ -130,7 +126,7 @@ export async function requireAdmin(
       if (!isValid) {
         logger.warn(
           { userId, adminId: adminUser.id, path: req.path },
-          'Admin access attempt with invalid MFA token'
+          'Admin access attempt with invalid MFA token',
         );
         res.status(401).json({ error: 'Invalid MFA token' });
         return;
@@ -174,7 +170,7 @@ export function requirePermission(permission: string) {
           permission,
           path: req.path,
         },
-        'Admin attempted action without required permission'
+        'Admin attempted action without required permission',
       );
       res.status(403).json({ error: `Forbidden: Missing permission '${permission}'` });
       return;

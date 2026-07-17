@@ -13,7 +13,7 @@ describe('Property 8: File Type Validation', () => {
   // Generator for random filename bases (without extension)
   const filenameBaseArb = fc.stringOf(
     fc.constantFrom(
-      ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split('')
+      ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split(''),
     ),
     { minLength: 1, maxLength: 30 },
   );
@@ -26,9 +26,27 @@ describe('Property 8: File Type Validation', () => {
 
   // Disallowed extensions - known dangerous and random ones
   const knownDisallowedExtensions = [
-    '.exe', '.dll', '.sh', '.bat', '.zip', '.tar', '.gz',
-    '.rar', '.7z', '.iso', '.bin', '.msi', '.app', '.deb',
-    '.rpm', '.war', '.jar', '.com', '.scr', '.vbs', '.ps1',
+    '.exe',
+    '.dll',
+    '.sh',
+    '.bat',
+    '.zip',
+    '.tar',
+    '.gz',
+    '.rar',
+    '.7z',
+    '.iso',
+    '.bin',
+    '.msi',
+    '.app',
+    '.deb',
+    '.rpm',
+    '.war',
+    '.jar',
+    '.com',
+    '.scr',
+    '.vbs',
+    '.ps1',
   ];
 
   // Generator for random extensions that are NOT in allowed set
@@ -36,16 +54,19 @@ describe('Property 8: File Type Validation', () => {
     // Known dangerous extensions
     fc.constantFrom(...knownDisallowedExtensions),
     // Random extensions (filter out allowed ones)
-    fc.stringOf(
-      fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
-      { minLength: 1, maxLength: 6 },
-    ).map((s) => `.${s}`).filter((ext) => !ALLOWED_EXTENSIONS.has(ext)),
+    fc
+      .stringOf(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')), {
+        minLength: 1,
+        maxLength: 6,
+      })
+      .map((s) => `.${s}`)
+      .filter((ext) => !ALLOWED_EXTENSIONS.has(ext)),
   );
 
   it('should accept filenames with any allowed extension', () => {
-    const validFilenameArb = fc.tuple(filenameBaseArb, allowedExtArb).map(
-      ([base, ext]) => `${base}${ext}`,
-    );
+    const validFilenameArb = fc
+      .tuple(filenameBaseArb, allowedExtArb)
+      .map(([base, ext]) => `${base}${ext}`);
 
     fc.assert(
       fc.property(validFilenameArb, (filename) => {
@@ -56,9 +77,9 @@ describe('Property 8: File Type Validation', () => {
   });
 
   it('should reject filenames with disallowed extensions', () => {
-    const invalidFilenameArb = fc.tuple(filenameBaseArb, randomDisallowedExtArb).map(
-      ([base, ext]) => `${base}${ext}`,
-    );
+    const invalidFilenameArb = fc
+      .tuple(filenameBaseArb, randomDisallowedExtArb)
+      .map(([base, ext]) => `${base}${ext}`);
 
     fc.assert(
       fc.property(invalidFilenameArb, (filename) => {
@@ -73,16 +94,18 @@ describe('Property 8: File Type Validation', () => {
     const randomCaseExtArb = allowedExtArb.chain((ext) => {
       // For each character in the extension, randomly uppercase or lowercase
       const chars = ext.split('');
-      return fc.tuple(
-        ...chars.map((c) =>
-          fc.boolean().map((upper) => (upper ? c.toUpperCase() : c.toLowerCase()))
-        ),
-      ).map((randomizedChars) => randomizedChars.join(''));
+      return fc
+        .tuple(
+          ...chars.map((c) =>
+            fc.boolean().map((upper) => (upper ? c.toUpperCase() : c.toLowerCase())),
+          ),
+        )
+        .map((randomizedChars) => randomizedChars.join(''));
     });
 
-    const caseInsensitiveFilenameArb = fc.tuple(filenameBaseArb, randomCaseExtArb).map(
-      ([base, ext]) => `${base}${ext}`,
-    );
+    const caseInsensitiveFilenameArb = fc
+      .tuple(filenameBaseArb, randomCaseExtArb)
+      .map(([base, ext]) => `${base}${ext}`);
 
     fc.assert(
       fc.property(caseInsensitiveFilenameArb, (filename) => {
@@ -96,7 +119,7 @@ describe('Property 8: File Type Validation', () => {
     // Filenames that do not contain a dot produce an empty extension
     const noExtFilenameArb = fc.stringOf(
       fc.constantFrom(
-        ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split('')
+        ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split(''),
       ),
       { minLength: 1, maxLength: 30 },
     );

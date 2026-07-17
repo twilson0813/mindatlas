@@ -103,11 +103,21 @@ const RELATIONSHIP_TYPES = [
 const testItemArb: fc.Arbitrary<TestItem> = fc.record({
   id: fc.uuid(),
   title: fc.oneof(fc.constant(null), fc.string({ minLength: 1, maxLength: 50 })),
-  content_type: fc.constantFrom('plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom'),
+  content_type: fc.constantFrom(
+    'plain_text',
+    'link',
+    'code_snippet',
+    'note',
+    'task',
+    'idea',
+    'file',
+    'custom',
+  ),
 });
 
 // Generate a set of items (1 to 20) with unique IDs
-const itemSetArb = fc.array(testItemArb, { minLength: 1, maxLength: 20 })
+const itemSetArb = fc
+  .array(testItemArb, { minLength: 1, maxLength: 20 })
   .map((items) => {
     // Ensure unique IDs by deduplicating
     const seen = new Set<string>();
@@ -129,13 +139,15 @@ function relationshipsArb(items: TestItem[]): fc.Arbitrary<TestRelationship[]> {
   }
 
   const itemIds = items.map((i) => i.id);
-  const singleRelArb: fc.Arbitrary<TestRelationship> = fc.record({
-    id: fc.uuid(),
-    sourceItemId: fc.constantFrom(...itemIds),
-    targetItemId: fc.constantFrom(...itemIds),
-    relationshipType: fc.constantFrom(...RELATIONSHIP_TYPES),
-    strength: fc.float({ min: 0, max: 1, noNaN: true }),
-  }).filter((r) => r.sourceItemId !== r.targetItemId); // No self-relationships
+  const singleRelArb: fc.Arbitrary<TestRelationship> = fc
+    .record({
+      id: fc.uuid(),
+      sourceItemId: fc.constantFrom(...itemIds),
+      targetItemId: fc.constantFrom(...itemIds),
+      relationshipType: fc.constantFrom(...RELATIONSHIP_TYPES),
+      strength: fc.float({ min: 0, max: 1, noNaN: true }),
+    })
+    .filter((r) => r.sourceItemId !== r.targetItemId); // No self-relationships
 
   return fc.array(singleRelArb, { minLength: 0, maxLength: 15 });
 }

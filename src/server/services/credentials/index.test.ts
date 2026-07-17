@@ -65,7 +65,7 @@ describe('Platform Credential Store', () => {
       expect(result).toEqual(creds);
       expect(mockQueryOne).toHaveBeenCalledWith(
         'SELECT credentials_encrypted FROM platform_credentials WHERE provider = $1',
-        ['openai']
+        ['openai'],
       );
       expect(mockDecrypt).toHaveBeenCalledWith(encryptedPayload);
     });
@@ -89,7 +89,7 @@ describe('Platform Credential Store', () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
       await expect(getPlatformCredentials('openai')).rejects.toThrow(
-        'Platform credentials not configured for provider: openai'
+        'Platform credentials not configured for provider: openai',
       );
     });
 
@@ -97,7 +97,7 @@ describe('Platform Credential Store', () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
       await expect(getPlatformCredentials('twilio')).rejects.toThrow(
-        'Platform credentials not configured for provider: twilio'
+        'Platform credentials not configured for provider: twilio',
       );
     });
 
@@ -105,7 +105,7 @@ describe('Platform Credential Store', () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
       await expect(getPlatformCredentials('stripe')).rejects.toThrow(
-        'Platform credentials not configured for provider: stripe'
+        'Platform credentials not configured for provider: stripe',
       );
     });
   });
@@ -170,7 +170,7 @@ describe('Platform Credential Store', () => {
       expect(mockEncrypt).toHaveBeenCalledWith(JSON.stringify(creds));
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO platform_credentials'),
-        ['openai', 'encrypted-result']
+        ['openai', 'encrypted-result'],
       );
     });
 
@@ -181,13 +181,15 @@ describe('Platform Credential Store', () => {
 
       await setPlatformCredentials('stripe', creds);
 
+      expect(mockQueryOne).toHaveBeenCalledWith(expect.stringContaining('ON CONFLICT (provider)'), [
+        'stripe',
+        'encrypted-stripe',
+      ]);
       expect(mockQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('ON CONFLICT (provider)'),
-        ['stripe', 'encrypted-stripe']
-      );
-      expect(mockQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('DO UPDATE SET credentials_encrypted = EXCLUDED.credentials_encrypted, updated_at = NOW()'),
-        expect.any(Array)
+        expect.stringContaining(
+          'DO UPDATE SET credentials_encrypted = EXCLUDED.credentials_encrypted, updated_at = NOW()',
+        ),
+        expect.any(Array),
       );
     });
 
@@ -204,7 +206,11 @@ describe('Platform Credential Store', () => {
     });
 
     it('should not invalidate cache for other providers', async () => {
-      credentialCache.set('platform:twilio', { accountSid: 'AC1', authToken: 'tok', phoneNumber: '+1' });
+      credentialCache.set('platform:twilio', {
+        accountSid: 'AC1',
+        authToken: 'tok',
+        phoneNumber: '+1',
+      });
       mockEncrypt.mockReturnValueOnce('encrypted-new');
       mockQueryOne.mockResolvedValueOnce(null);
 

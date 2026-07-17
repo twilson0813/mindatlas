@@ -35,11 +35,7 @@ function getIdentifier(req: Request): string {
 /**
  * Express middleware that enforces rate limiting using a Redis-backed sliding window.
  */
-export async function rateLimiter(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function rateLimiter(req: Request, res: Response, next: NextFunction): Promise<void> {
   const identifier = getIdentifier(req);
   const key = `rate_limit:${identifier}`;
   const now = Date.now();

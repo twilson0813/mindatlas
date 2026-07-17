@@ -103,14 +103,10 @@ export function ModerationPanel() {
             <tr key={user.id}>
               <td>{user.email}</td>
               <td>
-                <span className={`admin-status admin-status-${user.status}`}>
-                  {user.status}
-                </span>
+                <span className={`admin-status admin-status-${user.status}`}>{user.status}</span>
               </td>
               <td>{user.flagReason || '—'}</td>
-              <td>
-                {user.flaggedAt ? new Date(user.flaggedAt).toLocaleDateString() : '—'}
-              </td>
+              <td>{user.flaggedAt ? new Date(user.flaggedAt).toLocaleDateString() : '—'}</td>
               <td className="admin-actions">
                 {moderatingUserId === user.id ? (
                   <div className="admin-moderation-form">

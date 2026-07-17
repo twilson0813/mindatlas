@@ -11,7 +11,13 @@ import {
 } from './lockout.js';
 
 // Re-export lockout utilities for external use
-export { isAccountLocked, lockAccount, unlockAccount, resetFailedAttempts, recordFailedAttempt } from './lockout.js';
+export {
+  isAccountLocked,
+  lockAccount,
+  unlockAccount,
+  resetFailedAttempts,
+  recordFailedAttempt,
+} from './lockout.js';
 export type { LockableUser } from './lockout.js';
 export { MAX_FAILED_ATTEMPTS, LOCKOUT_DURATION_MS } from './lockout.js';
 
@@ -97,22 +103,18 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * Generates a JWT access token (15-minute expiry).
  */
 export function generateAccessToken(userId: string, email: string, role: string): string {
-  return jwt.sign(
-    { sub: userId, email, role },
-    config.jwtSecret,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
+  return jwt.sign({ sub: userId, email, role }, config.jwtSecret, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 }
 
 /**
  * Generates a JWT refresh token (7-day expiry).
  */
 export function generateRefreshToken(userId: string): string {
-  return jwt.sign(
-    { sub: userId, type: 'refresh' },
-    config.jwtRefreshSecret,
-    { expiresIn: REFRESH_TOKEN_EXPIRY }
-  );
+  return jwt.sign({ sub: userId, type: 'refresh' }, config.jwtRefreshSecret, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 }
 
 /**
@@ -128,10 +130,7 @@ export async function register(email: string, password: string): Promise<User> {
   }
 
   // Check if user already exists
-  const existing = await queryOne<{ id: string }>(
-    'SELECT id FROM users WHERE email = $1',
-    [email]
-  );
+  const existing = await queryOne<{ id: string }>('SELECT id FROM users WHERE email = $1', [email]);
   if (existing) {
     throw new Error('A user with this email already exists');
   }
@@ -144,7 +143,7 @@ export async function register(email: string, password: string): Promise<User> {
     `INSERT INTO users (email, password_hash, role)
      VALUES ($1, $2, 'user')
      RETURNING id, email, phone_number, is_locked, locked_until, failed_attempts, role, created_at, updated_at`,
-    [email, passwordHash]
+    [email, passwordHash],
   );
 
   if (!user) {
@@ -163,7 +162,7 @@ export async function login(email: string, password: string): Promise<TokenPair>
   const user = await queryOne<User & { password_hash: string }>(
     `SELECT id, email, password_hash, phone_number, is_locked, locked_until, failed_attempts, role, created_at, updated_at
      FROM users WHERE email = $1`,
-    [email]
+    [email],
   );
 
   if (!user) {
@@ -219,7 +218,7 @@ export async function refresh(refreshToken: string): Promise<{ accessToken: stri
     // Fetch current user info for the new access token
     const user = await queryOne<{ id: string; email: string; role: string }>(
       'SELECT id, email, role FROM users WHERE id = $1',
-      [payload.sub]
+      [payload.sub],
     );
 
     if (!user) {

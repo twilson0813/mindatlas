@@ -63,7 +63,11 @@ describe('Queues Module', () => {
 
   it('should configure AI processing queue with 3 retry attempts and exponential backoff', async () => {
     const { aiProcessingQueue } = await import('./queues.js');
-    const opts = (aiProcessingQueue as unknown as { opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } } }).opts;
+    const opts = (
+      aiProcessingQueue as unknown as {
+        opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } };
+      }
+    ).opts;
     expect(opts.defaultJobOptions.attempts).toBe(3);
     expect(opts.defaultJobOptions.backoff.type).toBe('exponential');
     expect(opts.defaultJobOptions.backoff.delay).toBe(2000);
@@ -71,7 +75,11 @@ describe('Queues Module', () => {
 
   it('should configure SMS retry queue with 3 attempts and exponential backoff', async () => {
     const { smsRetryQueue } = await import('./queues.js');
-    const opts = (smsRetryQueue as unknown as { opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } } }).opts;
+    const opts = (
+      smsRetryQueue as unknown as {
+        opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } };
+      }
+    ).opts;
     expect(opts.defaultJobOptions.attempts).toBe(3);
     expect(opts.defaultJobOptions.backoff.type).toBe('exponential');
     expect(opts.defaultJobOptions.backoff.delay).toBe(1000);
@@ -79,7 +87,11 @@ describe('Queues Module', () => {
 
   it('should configure Stripe payment retry queue with 3 attempts over ~7 days', async () => {
     const { stripePaymentRetryQueue } = await import('./queues.js');
-    const opts = (stripePaymentRetryQueue as unknown as { opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } } }).opts;
+    const opts = (
+      stripePaymentRetryQueue as unknown as {
+        opts: { defaultJobOptions: { attempts: number; backoff: { type: string; delay: number } } };
+      }
+    ).opts;
     expect(opts.defaultJobOptions.attempts).toBe(3);
     expect(opts.defaultJobOptions.backoff.type).toBe('fixed');
     // ~2.3 days between retries to cover 7 days with 3 attempts

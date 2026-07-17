@@ -45,7 +45,7 @@ describe('ItemGrid', () => {
     render(<ItemGrid items={[]} />);
 
     expect(
-      screen.getByText('No items yet. Start adding content to see it here.')
+      screen.getByText('No items yet. Start adding content to see it here.'),
     ).toBeInTheDocument();
   });
 

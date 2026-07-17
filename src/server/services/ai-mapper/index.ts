@@ -228,13 +228,21 @@ Rules:
     // Persist categories and tags to database
     await persistCategorization(item.id, categories, tags);
 
-    log.info({ itemId: item.id, categoryCount: categories.length, tagCount: tags.length }, 'Item categorized');
+    log.info(
+      { itemId: item.id, categoryCount: categories.length, tagCount: tags.length },
+      'Item categorized',
+    );
 
     return { itemId: item.id, categories, tags };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown AI error';
     log.error({ itemId: item.id, error: message }, 'AI categorization failed');
-    return { itemId: item.id, categories: [], tags: [], error: `AI categorization failed: ${message}. Please retry.` };
+    return {
+      itemId: item.id,
+      categories: [],
+      tags: [],
+      error: `AI categorization failed: ${message}. Please retry.`,
+    };
   }
 }
 
@@ -245,20 +253,20 @@ Rules:
 async function persistCategorization(
   itemId: string,
   categories: Array<{ name: string; confidence: number }>,
-  tags: Array<{ name: string; categoryName: string; confidence: number }>
+  tags: Array<{ name: string; categoryName: string; confidence: number }>,
 ): Promise<void> {
   await withTransaction(async (txQuery) => {
     for (const tag of tags) {
       // Ensure category exists
       let categoryRow = await txQuery<CategoryRow>(
         `SELECT id, name, color FROM categories WHERE name = $1`,
-        [tag.categoryName]
+        [tag.categoryName],
       ).then((r) => r.rows[0] ?? null);
 
       if (!categoryRow) {
         const insertResult = await txQuery<CategoryRow>(
           `INSERT INTO categories (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id, name, color`,
-          [tag.categoryName]
+          [tag.categoryName],
         );
         categoryRow = insertResult.rows[0];
       }
@@ -266,13 +274,13 @@ async function persistCategorization(
       // Ensure tag exists
       let tagRow = await txQuery<TagRow>(
         `SELECT id, name, category_id, color FROM tags WHERE name = $1 AND category_id = $2`,
-        [tag.name, categoryRow.id]
+        [tag.name, categoryRow.id],
       ).then((r) => r.rows[0] ?? null);
 
       if (!tagRow) {
         const insertResult = await txQuery<TagRow>(
           `INSERT INTO tags (name, category_id) VALUES ($1, $2) ON CONFLICT (name, category_id) DO UPDATE SET name = EXCLUDED.name RETURNING id, name, category_id, color`,
-          [tag.name, categoryRow.id]
+          [tag.name, categoryRow.id],
         );
         tagRow = insertResult.rows[0];
       }
@@ -282,7 +290,7 @@ async function persistCategorization(
         `INSERT INTO item_tags (item_id, tag_id, confidence_score)
          VALUES ($1, $2, $3)
          ON CONFLICT (item_id, tag_id) DO UPDATE SET confidence_score = EXCLUDED.confidence_score`,
-        [itemId, tagRow.id, tag.confidence]
+        [itemId, tagRow.id, tag.confidence],
       );
     }
   });
@@ -298,7 +306,7 @@ async function persistCategorization(
  */
 export async function mapRelationships(
   item: Item,
-  existingItems: Item[]
+  existingItems: Item[],
 ): Promise<RelationshipResult[]> {
   const client = await getClient();
 
@@ -310,9 +318,12 @@ export async function mapRelationships(
     // Limit context to avoid token overflow — take most recent 20 items
     const contextItems = existingItems.slice(0, 20);
 
-    const existingItemsSummary = contextItems.map((ei, idx) => (
-      `[${idx}] ID: ${ei.id} | Title: ${ei.title || 'Untitled'} | Type: ${ei.content_type} | Content: ${ei.content.substring(0, 200)}`
-    )).join('\n');
+    const existingItemsSummary = contextItems
+      .map(
+        (ei, idx) =>
+          `[${idx}] ID: ${ei.id} | Title: ${ei.title || 'Untitled'} | Type: ${ei.content_type} | Content: ${ei.content.substring(0, 200)}`,
+      )
+      .join('\n');
 
     const prompt = `You are an AI relationship mapper. Analyze the NEW item and identify its relationships with the EXISTING items.
 
@@ -401,7 +412,7 @@ async function persistRelationships(relationships: RelationshipResult[]): Promis
       `INSERT INTO relationships (source_item_id, target_item_id, relationship_type, strength)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT DO NOTHING`,
-      [rel.sourceItemId, rel.targetItemId, rel.relationshipType, rel.strength]
+      [rel.sourceItemId, rel.targetItemId, rel.relationshipType, rel.strength],
     );
   }
 }
@@ -422,7 +433,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
        FROM items
        WHERE user_id = $1 AND is_deleted = false
        ORDER BY created_at DESC`,
-      [userId]
+      [userId],
     );
 
     if (itemRows.length === 0) {
@@ -448,7 +459,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
        FROM relationships r
        JOIN items src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
        JOIN items tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false`,
-      [userId]
+      [userId],
     );
 
     // Build nodes — items that participate in relationships
@@ -482,7 +493,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
       `INSERT INTO maps (user_id, title, layout_data, generated_at)
        VALUES ($1, $2, $3, NOW())
        RETURNING id`,
-      [userId, 'Auto-generated Map', JSON.stringify({ nodes, edges })]
+      [userId, 'Auto-generated Map', JSON.stringify({ nodes, edges })],
     );
 
     const mapId = mapRow?.id || '';
@@ -493,7 +504,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
         `INSERT INTO map_nodes (map_id, item_id, x_position, y_position)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (map_id, item_id) DO UPDATE SET x_position = EXCLUDED.x_position, y_position = EXCLUDED.y_position`,
-        [mapId, node.itemId, node.x, node.y]
+        [mapId, node.itemId, node.x, node.y],
       );
     }
 
@@ -503,7 +514,7 @@ export async function generateMap(userId: string): Promise<MapResult> {
         `INSERT INTO map_edges (map_id, relationship_id)
          VALUES ($1, $2)
          ON CONFLICT (map_id, relationship_id) DO NOTHING`,
-        [mapId, rel.id]
+        [mapId, rel.id],
       );
     }
 
@@ -551,7 +562,7 @@ export async function queryItems(userId: string, queryText: string): Promise<Que
        WHERE user_id = $1 AND is_deleted = false
        ORDER BY created_at DESC
        LIMIT 50`,
-      [userId]
+      [userId],
     );
 
     if (itemRows.length === 0) {
@@ -566,9 +577,12 @@ export async function queryItems(userId: string, queryText: string): Promise<Que
       content_type: row.content_type,
     }));
 
-    const itemsSummary = decryptedItems.map((item, idx) => (
-      `[${idx}] ID: ${item.id} | Title: ${item.title || 'Untitled'} | Type: ${item.content_type} | Content: ${item.content.substring(0, 300)}`
-    )).join('\n');
+    const itemsSummary = decryptedItems
+      .map(
+        (item, idx) =>
+          `[${idx}] ID: ${item.id} | Title: ${item.title || 'Untitled'} | Type: ${item.content_type} | Content: ${item.content.substring(0, 300)}`,
+      )
+      .join('\n');
 
     const prompt = `You are an AI search assistant. A user is searching their personal items collection.
 
@@ -611,7 +625,11 @@ Rules:
     }>(content);
 
     if (!parsed) {
-      return { items: [], summary: 'Unable to process query.', error: 'Failed to parse AI response' };
+      return {
+        items: [],
+        summary: 'Unable to process query.',
+        error: 'Failed to parse AI response',
+      };
     }
 
     // Map results with full item data
@@ -662,7 +680,7 @@ export async function suggestRelated(userId: string, itemId: string): Promise<Su
       `SELECT id, user_id, title, content_encrypted, content_type, metadata, source_channel, created_at
        FROM items
        WHERE id = $1 AND user_id = $2 AND is_deleted = false`,
-      [itemId, userId]
+      [itemId, userId],
     );
 
     if (!targetRow) {
@@ -678,7 +696,7 @@ export async function suggestRelated(userId: string, itemId: string): Promise<Su
        WHERE user_id = $1 AND id != $2 AND is_deleted = false
        ORDER BY created_at DESC
        LIMIT 30`,
-      [userId, itemId]
+      [userId, itemId],
     );
 
     if (otherRows.length === 0) {
@@ -692,9 +710,12 @@ export async function suggestRelated(userId: string, itemId: string): Promise<Su
       content_type: row.content_type,
     }));
 
-    const otherSummary = otherItems.map((item, idx) => (
-      `[${idx}] ID: ${item.id} | Title: ${item.title || 'Untitled'} | Type: ${item.content_type} | Content: ${item.content.substring(0, 200)}`
-    )).join('\n');
+    const otherSummary = otherItems
+      .map(
+        (item, idx) =>
+          `[${idx}] ID: ${item.id} | Title: ${item.title || 'Untitled'} | Type: ${item.content_type} | Content: ${item.content.substring(0, 200)}`,
+      )
+      .join('\n');
 
     const prompt = `You are an AI suggestion engine. Analyze the TARGET item and suggest related items from the user's collection, along with recommended actions.
 

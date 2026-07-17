@@ -27,7 +27,7 @@ import type { AuthenticatedUser } from '../types/express.js';
 export async function authenticateApiKey(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   const apiKey = req.headers['x-api-key'] as string | undefined;
 
@@ -48,7 +48,7 @@ export async function authenticateApiKey(
     // Load user to build the same req.user shape as JWT auth
     const userResult = await query<{ id: string; email: string; role: string }>(
       `SELECT id, email, role FROM users WHERE id = $1`,
-      [keyRow.user_id]
+      [keyRow.user_id],
     );
 
     const user = userResult.rows[0];
@@ -89,7 +89,7 @@ export async function authenticateApiKey(
 export async function authenticateTokenOrApiKey(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   const authHeader = req.headers.authorization;
   const apiKeyHeader = req.headers['x-api-key'];

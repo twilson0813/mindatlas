@@ -114,8 +114,28 @@ function itemMatchesFilters(item: TestItem, filters: SearchFilters): boolean {
 // Generators
 // ──────────────────────────────────────────────
 
-const CATEGORY_POOL = ['Technology', 'Science', 'Art', 'Music', 'Sports', 'Health', 'Finance', 'Travel'];
-const TAG_POOL = ['javascript', 'python', 'machine-learning', 'design', 'cooking', 'fitness', 'crypto', 'nature', 'photography', 'books'];
+const CATEGORY_POOL = [
+  'Technology',
+  'Science',
+  'Art',
+  'Music',
+  'Sports',
+  'Health',
+  'Finance',
+  'Travel',
+];
+const TAG_POOL = [
+  'javascript',
+  'python',
+  'machine-learning',
+  'design',
+  'cooking',
+  'fitness',
+  'crypto',
+  'nature',
+  'photography',
+  'books',
+];
 
 const categoryArb = fc.constantFrom(...CATEGORY_POOL);
 const tagArb = fc.constantFrom(...TAG_POOL);
@@ -132,7 +152,16 @@ const testItemArb: fc.Arbitrary<TestItem> = fc.record({
   user_id: fc.uuid(),
   title: fc.oneof(fc.constant(null), fc.string({ minLength: 1, maxLength: 50 })),
   content: fc.string({ minLength: 1, maxLength: 200 }),
-  content_type: fc.constantFrom('plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom'),
+  content_type: fc.constantFrom(
+    'plain_text',
+    'link',
+    'code_snippet',
+    'note',
+    'task',
+    'idea',
+    'file',
+    'custom',
+  ),
   categories: fc.array(categoryArb, { minLength: 0, maxLength: 3 }),
   tags: fc.array(tagArb, { minLength: 0, maxLength: 5 }),
   created_at: dateArb,
@@ -142,21 +171,23 @@ const testItemArb: fc.Arbitrary<TestItem> = fc.record({
 const itemSetArb = fc.array(testItemArb, { minLength: 1, maxLength: 30 });
 
 // Generate filter combinations where filters reference values from the known pools
-const searchFiltersArb: fc.Arbitrary<SearchFilters> = fc.record({
-  category: fc.oneof(fc.constant(undefined), categoryArb),
-  tag: fc.oneof(fc.constant(undefined), tagArb),
-  date_from: fc.oneof(fc.constant(undefined), dateArb),
-  date_to: fc.oneof(fc.constant(undefined), dateArb),
-  keyword: fc.oneof(fc.constant(undefined), fc.string({ minLength: 1, maxLength: 20 })),
-}).map((f) => {
-  // Ensure date_from <= date_to when both are present
-  if (f.date_from && f.date_to && f.date_from > f.date_to) {
-    const temp = f.date_from;
-    f.date_from = f.date_to;
-    f.date_to = temp;
-  }
-  return f;
-});
+const searchFiltersArb: fc.Arbitrary<SearchFilters> = fc
+  .record({
+    category: fc.oneof(fc.constant(undefined), categoryArb),
+    tag: fc.oneof(fc.constant(undefined), tagArb),
+    date_from: fc.oneof(fc.constant(undefined), dateArb),
+    date_to: fc.oneof(fc.constant(undefined), dateArb),
+    keyword: fc.oneof(fc.constant(undefined), fc.string({ minLength: 1, maxLength: 20 })),
+  })
+  .map((f) => {
+    // Ensure date_from <= date_to when both are present
+    if (f.date_from && f.date_to && f.date_from > f.date_to) {
+      const temp = f.date_from;
+      f.date_from = f.date_to;
+      f.date_to = temp;
+    }
+    return f;
+  });
 
 // ──────────────────────────────────────────────
 // Property Tests
@@ -238,21 +269,26 @@ describe('Property 12: Search Filter Correctness', () => {
 
   it('adding more filters never increases result count', () => {
     fc.assert(
-      fc.property(itemSetArb, searchFiltersArb, categoryArb, (items, baseFilters, extraCategory) => {
-        const baseResults = filterItems(items, baseFilters);
+      fc.property(
+        itemSetArb,
+        searchFiltersArb,
+        categoryArb,
+        (items, baseFilters, extraCategory) => {
+          const baseResults = filterItems(items, baseFilters);
 
-        // Add an additional category filter
-        const stricterFilters: SearchFilters = {
-          ...baseFilters,
-          category: baseFilters.category ?? extraCategory,
-        };
+          // Add an additional category filter
+          const stricterFilters: SearchFilters = {
+            ...baseFilters,
+            category: baseFilters.category ?? extraCategory,
+          };
 
-        // If we added a new constraint (category was undefined before), results should not grow
-        if (!baseFilters.category) {
-          const stricterResults = filterItems(items, stricterFilters);
-          expect(stricterResults.length).toBeLessThanOrEqual(baseResults.length);
-        }
-      }),
+          // If we added a new constraint (category was undefined before), results should not grow
+          if (!baseFilters.category) {
+            const stricterResults = filterItems(items, stricterFilters);
+            expect(stricterResults.length).toBeLessThanOrEqual(baseResults.length);
+          }
+        },
+      ),
       { numRuns: 200 },
     );
   });

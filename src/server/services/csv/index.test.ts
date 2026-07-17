@@ -138,10 +138,7 @@ describe('CSV Service', () => {
     });
 
     it('should parse content_type when provided', () => {
-      const result = parseRow(
-        { content: 'A note', content_type: 'note' },
-        2
-      );
+      const result = parseRow({ content: 'A note', content_type: 'note' }, 2);
       expect(result.type).toBe('parsed');
       if (result.type === 'parsed') {
         expect(result.data.content_type).toBe('note');
@@ -149,10 +146,7 @@ describe('CSV Service', () => {
     });
 
     it('should parse tags into metadata', () => {
-      const result = parseRow(
-        { content: 'Tagged item', tags: 'tag1, tag2, tag3' },
-        2
-      );
+      const result = parseRow({ content: 'Tagged item', tags: 'tag1, tag2, tag3' }, 2);
       expect(result.type).toBe('parsed');
       if (result.type === 'parsed') {
         expect(result.data.metadata).toEqual({ tags: ['tag1', 'tag2', 'tag3'] });
@@ -160,10 +154,7 @@ describe('CSV Service', () => {
     });
 
     it('should parse valid metadata JSON', () => {
-      const result = parseRow(
-        { content: 'With metadata', metadata: '{"key": "value"}' },
-        2
-      );
+      const result = parseRow({ content: 'With metadata', metadata: '{"key": "value"}' }, 2);
       expect(result.type).toBe('parsed');
       if (result.type === 'parsed') {
         expect(result.data.metadata).toEqual({ key: 'value' });
@@ -171,10 +162,7 @@ describe('CSV Service', () => {
     });
 
     it('should ignore invalid metadata JSON and still create item', () => {
-      const result = parseRow(
-        { content: 'Bad metadata', metadata: 'not json' },
-        2
-      );
+      const result = parseRow({ content: 'Bad metadata', metadata: 'not json' }, 2);
       expect(result.type).toBe('parsed');
       if (result.type === 'parsed') {
         expect(result.data.content).toBe('Bad metadata');

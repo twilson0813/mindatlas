@@ -86,12 +86,8 @@ describe('Purge Worker - processPurgeJob', () => {
     const job = createMockJob();
     await processPurgeJob(job);
 
-    expect(mockQueryMany).toHaveBeenCalledWith(
-      expect.stringContaining("is_deleted = true")
-    );
-    expect(mockQueryMany).toHaveBeenCalledWith(
-      expect.stringContaining("INTERVAL '24 hours'")
-    );
+    expect(mockQueryMany).toHaveBeenCalledWith(expect.stringContaining('is_deleted = true'));
+    expect(mockQueryMany).toHaveBeenCalledWith(expect.stringContaining("INTERVAL '24 hours'"));
   });
 
   it('should hard-delete items without file_path (no storage call)', async () => {

@@ -74,11 +74,7 @@ function buildTestApp() {
 }
 
 function generateValidToken(userId = 'user-123', email = 'test@example.com') {
-  return jwt.sign(
-    { sub: userId, email, role: 'user' },
-    config.jwtSecret,
-    { expiresIn: '15m' }
-  );
+  return jwt.sign({ sub: userId, email, role: 'user' }, config.jwtSecret, { expiresIn: '15m' });
 }
 
 describe('CSV Export Routes', () => {
@@ -108,7 +104,8 @@ describe('CSV Export Routes', () => {
 
   describe('GET /api/csv/export/items', () => {
     it('should return CSV file with correct content-type and disposition', async () => {
-      const csvContent = 'content,content_type,tags,creation_date,metadata\nHello,plain_text,tag1,2024-01-01T00:00:00.000Z,\n';
+      const csvContent =
+        'content,content_type,tags,creation_date,metadata\nHello,plain_text,tag1,2024-01-01T00:00:00.000Z,\n';
       vi.mocked(exportItems).mockResolvedValue(Buffer.from(csvContent));
 
       const token = generateValidToken();
@@ -126,9 +123,7 @@ describe('CSV Export Routes', () => {
       vi.mocked(exportItems).mockResolvedValue(Buffer.from('content\n'));
 
       const token = generateValidToken('user-abc');
-      await request(app)
-        .get('/api/csv/export/items')
-        .set('Authorization', `Bearer ${token}`);
+      await request(app).get('/api/csv/export/items').set('Authorization', `Bearer ${token}`);
 
       expect(exportItems).toHaveBeenCalledWith('user-abc');
     });
@@ -148,7 +143,8 @@ describe('CSV Export Routes', () => {
 
   describe('GET /api/csv/export/maps', () => {
     it('should return CSV file with correct content-type and disposition', async () => {
-      const csvContent = 'source_item_id,target_item_id,relationship_type,confidence_score\nitem-a,item-b,related,0.85\n';
+      const csvContent =
+        'source_item_id,target_item_id,relationship_type,confidence_score\nitem-a,item-b,related,0.85\n';
       vi.mocked(exportMaps).mockResolvedValue(Buffer.from(csvContent));
 
       const token = generateValidToken();
@@ -166,9 +162,7 @@ describe('CSV Export Routes', () => {
       vi.mocked(exportMaps).mockResolvedValue(Buffer.from('header\n'));
 
       const token = generateValidToken('user-xyz');
-      await request(app)
-        .get('/api/csv/export/maps')
-        .set('Authorization', `Bearer ${token}`);
+      await request(app).get('/api/csv/export/maps').set('Authorization', `Bearer ${token}`);
 
       expect(exportMaps).toHaveBeenCalledWith('user-xyz');
     });

@@ -76,26 +76,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const scheduleRefresh = useCallback((accessToken: string) => {
-    const payload = decodeTokenPayload(accessToken);
-    if (!payload) return;
+  const scheduleRefresh = useCallback(
+    (accessToken: string) => {
+      const payload = decodeTokenPayload(accessToken);
+      if (!payload) return;
 
-    // Refresh 2 minutes before expiry
-    const expiresIn = payload.exp * 1000 - Date.now();
-    const refreshIn = Math.max(expiresIn - 120_000, 10_000);
+      // Refresh 2 minutes before expiry
+      const expiresIn = payload.exp * 1000 - Date.now();
+      const refreshIn = Math.max(expiresIn - 120_000, 10_000);
 
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-    }
-
-    refreshTimerRef.current = setTimeout(async () => {
-      try {
-        await refreshTokenRequest();
-      } catch {
-        clearTokens();
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
       }
-    }, refreshIn);
-  }, [clearTokens]);
+
+      refreshTimerRef.current = setTimeout(async () => {
+        try {
+          await refreshTokenRequest();
+        } catch {
+          clearTokens();
+        }
+      }, refreshIn);
+    },
+    [clearTokens],
+  );
 
   const refreshTokenRequest = useCallback(async () => {
     const storedRefreshToken = getStoredToken(REFRESH_TOKEN_KEY);
@@ -151,51 +154,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, [clearTokens, refreshTokenRequest, scheduleRefresh]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || 'Login failed');
-    }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Login failed');
+      }
 
-    const data = await response.json();
-    setStoredToken(ACCESS_TOKEN_KEY, data.accessToken);
-    setStoredToken(REFRESH_TOKEN_KEY, data.refreshToken);
+      const data = await response.json();
+      setStoredToken(ACCESS_TOKEN_KEY, data.accessToken);
+      setStoredToken(REFRESH_TOKEN_KEY, data.refreshToken);
 
-    const payload = decodeTokenPayload(data.accessToken);
-    if (payload) {
-      setUser({ id: payload.sub, email: payload.email });
-      scheduleRefresh(data.accessToken);
-    }
-  }, [scheduleRefresh]);
+      const payload = decodeTokenPayload(data.accessToken);
+      if (payload) {
+        setUser({ id: payload.sub, email: payload.email });
+        scheduleRefresh(data.accessToken);
+      }
+    },
+    [scheduleRefresh],
+  );
 
-  const register = useCallback(async (email: string, password: string) => {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+  const register = useCallback(
+    async (email: string, password: string) => {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.message || 'Registration failed');
-    }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Registration failed');
+      }
 
-    const data = await response.json();
-    setStoredToken(ACCESS_TOKEN_KEY, data.accessToken);
-    setStoredToken(REFRESH_TOKEN_KEY, data.refreshToken);
+      const data = await response.json();
+      setStoredToken(ACCESS_TOKEN_KEY, data.accessToken);
+      setStoredToken(REFRESH_TOKEN_KEY, data.refreshToken);
 
-    const payload = decodeTokenPayload(data.accessToken);
-    if (payload) {
-      setUser({ id: payload.sub, email: payload.email });
-      scheduleRefresh(data.accessToken);
-    }
-  }, [scheduleRefresh]);
+      const payload = decodeTokenPayload(data.accessToken);
+      if (payload) {
+        setUser({ id: payload.sub, email: payload.email });
+        scheduleRefresh(data.accessToken);
+      }
+    },
+    [scheduleRefresh],
+  );
 
   const logout = useCallback(() => {
     clearTokens();

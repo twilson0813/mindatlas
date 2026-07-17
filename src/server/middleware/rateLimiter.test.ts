@@ -168,7 +168,7 @@ describe('Rate Limiter Middleware', () => {
       expect(mockNext).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(429);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ error: 'Too many requests' })
+        expect.objectContaining({ error: 'Too many requests' }),
       );
     });
 
@@ -224,7 +224,10 @@ describe('Rate Limiter Middleware', () => {
       await rateLimiter(req, res as unknown as Response, mockNext);
 
       expect(res.set).toHaveBeenCalledWith('Retry-After', expect.any(String));
-      const retryAfter = parseInt((res as { headers: Record<string, string> }).headers['Retry-After'], 10);
+      const retryAfter = parseInt(
+        (res as { headers: Record<string, string> }).headers['Retry-After'],
+        10,
+      );
       // Should be approximately 20 seconds (60 - 40)
       expect(retryAfter).toBeGreaterThanOrEqual(19);
       expect(retryAfter).toBeLessThanOrEqual(21);
@@ -257,7 +260,7 @@ describe('Rate Limiter Middleware', () => {
         expect.objectContaining({
           error: 'Too many requests',
           retryAfter: expect.any(Number),
-        })
+        }),
       );
     });
   });

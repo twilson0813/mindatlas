@@ -28,9 +28,7 @@ const PROVIDER_CONFIGS: ProviderConfig[] = [
     name: 'openai',
     displayName: 'OpenAI',
     description: 'AI-powered features including item categorization and mapping.',
-    fields: [
-      { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' },
-    ],
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' }],
   },
   {
     name: 'twilio',
@@ -99,7 +97,9 @@ export default function PlatformCredentials() {
     return (
       <div className="admin-error" role="alert">
         <p>You do not have permission to manage platform credentials.</p>
-        <p>The <code>entitlements.manage</code> permission is required.</p>
+        <p>
+          The <code>entitlements.manage</code> permission is required.
+        </p>
       </div>
     );
   }
@@ -194,10 +194,7 @@ function ProviderCredentialSection({ config, status, onSaved }: ProviderCredenti
   const hasValues = config.fields.some((field) => formValues[field.key]?.trim());
 
   return (
-    <section
-      className="admin-credential-section"
-      aria-labelledby={`${config.name}-heading`}
-    >
+    <section className="admin-credential-section" aria-labelledby={`${config.name}-heading`}>
       <div className="admin-credential-section-header">
         <div>
           <h4 id={`${config.name}-heading`}>{config.displayName}</h4>

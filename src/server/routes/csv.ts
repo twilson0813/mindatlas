@@ -4,7 +4,13 @@ import type { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
 import { requireEntitlement } from '../middleware/entitlement.js';
-import { importCsv, exportItems, exportMaps, getTemplate, MAX_CSV_FILE_SIZE } from '../services/csv/index.js';
+import {
+  importCsv,
+  exportItems,
+  exportMaps,
+  getTemplate,
+  MAX_CSV_FILE_SIZE,
+} from '../services/csv/index.js';
 import { createChildLogger } from '../logger.js';
 
 const log = createChildLogger({ module: 'csv-route' });
@@ -84,7 +90,7 @@ router.post(
 
       log.info(
         { userId, itemsCreated: result.itemsCreated, rowsSkipped: result.rowsSkipped },
-        'CSV import request completed'
+        'CSV import request completed',
       );
 
       res.status(200).json(result);
@@ -94,7 +100,7 @@ router.post(
       log.error({ error: err.message }, 'CSV import failed');
       res.status(statusCode).json({ error: err.message });
     }
-  }
+  },
 );
 
 /**

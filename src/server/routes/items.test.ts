@@ -19,7 +19,14 @@ vi.mock('../services/items/index.js', () => ({
   deleteItem: vi.fn(),
   getItemRelationships: vi.fn(),
   VALID_CONTENT_TYPES: [
-    'plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom',
+    'plain_text',
+    'link',
+    'code_snippet',
+    'note',
+    'task',
+    'idea',
+    'file',
+    'custom',
   ],
   validateItemInput: vi.fn(),
 }));
@@ -89,11 +96,7 @@ function buildTestApp() {
 }
 
 function generateValidToken(userId = 'user-123', email = 'test@example.com') {
-  return jwt.sign(
-    { sub: userId, email, role: 'user' },
-    config.jwtSecret,
-    { expiresIn: '15m' }
-  );
+  return jwt.sign({ sub: userId, email, role: 'user' }, config.jwtSecret, { expiresIn: '15m' });
 }
 
 describe('Items API Routes', () => {
@@ -126,7 +129,7 @@ describe('Items API Routes', () => {
       const expiredToken = jwt.sign(
         { sub: 'user-123', email: 'test@example.com', role: 'user' },
         config.jwtSecret,
-        { expiresIn: '-1s' }
+        { expiresIn: '-1s' },
       );
       const response = await request(app)
         .get('/api/items')
@@ -165,11 +168,14 @@ describe('Items API Routes', () => {
       expect(response.status).toBe(201);
       expect(response.body.id).toBe('item-1');
       expect(response.body.content).toBe('Test content');
-      expect(createItem).toHaveBeenCalledWith('user-123', expect.objectContaining({
-        content: 'Test content',
-        content_type: 'plain_text',
-        source_channel: 'api',
-      }));
+      expect(createItem).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          content: 'Test content',
+          content_type: 'plain_text',
+          source_channel: 'api',
+        }),
+      );
     });
 
     it('should return 400 when content is missing', async () => {
@@ -259,17 +265,18 @@ describe('Items API Routes', () => {
       vi.mocked(listItems).mockResolvedValue(mockResult as any);
 
       const token = generateValidToken();
-      const response = await request(app)
-        .get('/api/items')
-        .set('Authorization', `Bearer ${token}`);
+      const response = await request(app).get('/api/items').set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.items).toHaveLength(1);
       expect(response.body.total).toBe(1);
-      expect(listItems).toHaveBeenCalledWith('user-123', expect.objectContaining({
-        page: undefined,
-        page_size: undefined,
-      }));
+      expect(listItems).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          page: undefined,
+          page_size: undefined,
+        }),
+      );
     });
 
     it('should pass filter query params to listItems', async () => {
@@ -313,10 +320,13 @@ describe('Items API Routes', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(listItems).toHaveBeenCalledWith('user-123', expect.objectContaining({
-        date_from: '2024-01-01',
-        date_to: '2024-12-31',
-      }));
+      expect(listItems).toHaveBeenCalledWith(
+        'user-123',
+        expect.objectContaining({
+          date_from: '2024-01-01',
+          date_to: '2024-12-31',
+        }),
+      );
     });
   });
 

@@ -87,7 +87,7 @@ function createMockStripe() {
     webhooks: {
       constructEvent: vi.fn(),
     },
-  } as unknown as ReturnType<typeof import('stripe').default['prototype']['constructor']>;
+  } as unknown as ReturnType<(typeof import('stripe').default)['prototype']['constructor']>;
 }
 
 describe('Subscription Service', () => {
@@ -164,30 +164,37 @@ describe('Subscription Service', () => {
 
       expect(result.planName).toBe('pro');
       expect(result.status).toBe('active');
-      expect((mockStripe.customers.create as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'user@test.com', payment_method: 'pm_card123' })
+      expect(mockStripe.customers.create as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'user@test.com', payment_method: 'pm_card123' }),
       );
-      expect((mockStripe.subscriptions.create as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
+      expect(mockStripe.subscriptions.create as ReturnType<typeof vi.fn>).toHaveBeenCalled();
     });
 
     it('should throw if plan not found', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
-      await expect(subscribeToPlan('user-1', 'bad-plan', 'pm_card123'))
-        .rejects.toThrow('Plan not found or is inactive');
+      await expect(subscribeToPlan('user-1', 'bad-plan', 'pm_card123')).rejects.toThrow(
+        'Plan not found or is inactive',
+      );
     });
 
     it('should throw if user already has active subscription', async () => {
       // Plan found
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-pro', name: 'pro', display_name: 'Pro',
-        stripe_price_id: 'price_pro', price_monthly_cents: 1999,
-        storage_limit_mb: 5120, ai_queries_per_day: 100, is_active: true,
+        id: 'plan-pro',
+        name: 'pro',
+        display_name: 'Pro',
+        stripe_price_id: 'price_pro',
+        price_monthly_cents: 1999,
+        storage_limit_mb: 5120,
+        ai_queries_per_day: 100,
+        is_active: true,
       });
       // Existing subscription found
       mockQueryOne.mockResolvedValueOnce({ id: 'existing-sub', status: 'active' });
 
-      await expect(subscribeToPlan('user-1', 'plan-pro', 'pm_card123'))
-        .rejects.toThrow('User already has an active subscription');
+      await expect(subscribeToPlan('user-1', 'plan-pro', 'pm_card123')).rejects.toThrow(
+        'User already has an active subscription',
+      );
     });
   });
 
@@ -195,40 +202,56 @@ describe('Subscription Service', () => {
     it('should prorate and activate new plan immediately', async () => {
       // Current subscription
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-free',
-        status: 'active', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-free',
+        status: 'active',
+        stripe_subscription_id: 'sub_stripe',
         stripe_customer_id: 'cus_stripe',
-        current_period_start: new Date(), current_period_end: new Date(),
-        pending_plan_id: null, canceled_at: null,
+        current_period_start: new Date(),
+        current_period_end: new Date(),
+        pending_plan_id: null,
+        canceled_at: null,
       });
       // New plan
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-pro', name: 'pro', display_name: 'Pro',
-        stripe_price_id: 'price_pro', price_monthly_cents: 1999,
-        storage_limit_mb: 5120, ai_queries_per_day: 100, is_active: true,
+        id: 'plan-pro',
+        name: 'pro',
+        display_name: 'Pro',
+        stripe_price_id: 'price_pro',
+        price_monthly_cents: 1999,
+        storage_limit_mb: 5120,
+        ai_queries_per_day: 100,
+        is_active: true,
       });
       // Update DB
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
-        status: 'active', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
+        status: 'active',
+        stripe_subscription_id: 'sub_stripe',
         stripe_customer_id: 'cus_stripe',
-        current_period_start: new Date(), current_period_end: new Date(),
-        pending_plan_id: null, canceled_at: null,
+        current_period_start: new Date(),
+        current_period_end: new Date(),
+        pending_plan_id: null,
+        canceled_at: null,
       });
 
       const result = await upgradePlan('user-1', 'plan-pro');
 
       expect(result.planName).toBe('pro');
-      expect((mockStripe.subscriptions.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mockStripe.subscriptions.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         'sub_stripe',
-        expect.objectContaining({ proration_behavior: 'create_prorations' })
+        expect.objectContaining({ proration_behavior: 'create_prorations' }),
       );
     });
 
     it('should throw if no active subscription exists', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
-      await expect(upgradePlan('user-1', 'plan-pro'))
-        .rejects.toThrow('No active subscription found');
+      await expect(upgradePlan('user-1', 'plan-pro')).rejects.toThrow(
+        'No active subscription found',
+      );
     });
   });
 
@@ -236,25 +259,40 @@ describe('Subscription Service', () => {
     it('should schedule downgrade at period end without changing current plan', async () => {
       // Current subscription
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
-        status: 'active', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
+        status: 'active',
+        stripe_subscription_id: 'sub_stripe',
         stripe_customer_id: 'cus_stripe',
-        current_period_start: new Date(), current_period_end: new Date(),
-        pending_plan_id: null, canceled_at: null,
+        current_period_start: new Date(),
+        current_period_end: new Date(),
+        pending_plan_id: null,
+        canceled_at: null,
       });
       // New plan
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-free', name: 'free', display_name: 'Free',
-        stripe_price_id: null, price_monthly_cents: 0,
-        storage_limit_mb: 500, ai_queries_per_day: 10, is_active: true,
+        id: 'plan-free',
+        name: 'free',
+        display_name: 'Free',
+        stripe_price_id: null,
+        price_monthly_cents: 0,
+        storage_limit_mb: 500,
+        ai_queries_per_day: 10,
+        is_active: true,
       });
       // Update sets pending_plan_id
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
-        status: 'active', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
+        status: 'active',
+        stripe_subscription_id: 'sub_stripe',
         stripe_customer_id: 'cus_stripe',
-        current_period_start: new Date(), current_period_end: new Date(),
-        pending_plan_id: 'plan-free', canceled_at: null,
+        current_period_start: new Date(),
+        current_period_end: new Date(),
+        pending_plan_id: 'plan-free',
+        canceled_at: null,
       });
       // Current plan name lookup
       mockQueryOne.mockResolvedValueOnce({ name: 'pro' });
@@ -268,34 +306,39 @@ describe('Subscription Service', () => {
 
     it('should throw if no active subscription', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
-      await expect(downgradePlan('user-1', 'plan-free'))
-        .rejects.toThrow('No active subscription found');
+      await expect(downgradePlan('user-1', 'plan-free')).rejects.toThrow(
+        'No active subscription found',
+      );
     });
   });
 
   describe('cancelSubscription', () => {
     it('should cancel at period end in Stripe and mark canceled_at in DB', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
-        status: 'active', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
+        status: 'active',
+        stripe_subscription_id: 'sub_stripe',
         stripe_customer_id: 'cus_stripe',
-        current_period_start: new Date(), current_period_end: new Date(),
-        pending_plan_id: null, canceled_at: null,
+        current_period_start: new Date(),
+        current_period_end: new Date(),
+        pending_plan_id: null,
+        canceled_at: null,
       });
       mockQueryOne.mockResolvedValueOnce(null); // Update
 
       await cancelSubscription('user-1');
 
-      expect((mockStripe.subscriptions.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mockStripe.subscriptions.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         'sub_stripe',
-        { cancel_at_period_end: true }
+        { cancel_at_period_end: true },
       );
     });
 
     it('should throw if no active subscription', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
-      await expect(cancelSubscription('user-1'))
-        .rejects.toThrow('No active subscription found');
+      await expect(cancelSubscription('user-1')).rejects.toThrow('No active subscription found');
     });
   });
 
@@ -305,8 +348,9 @@ describe('Subscription Service', () => {
         throw new Error('Invalid signature');
       });
 
-      await expect(handleStripeWebhook(Buffer.from('body'), 'bad-sig'))
-        .rejects.toThrow('Invalid webhook signature');
+      await expect(handleStripeWebhook(Buffer.from('body'), 'bad-sig')).rejects.toThrow(
+        'Invalid webhook signature',
+      );
     });
 
     it('should process invoice.payment_succeeded events', async () => {
@@ -326,7 +370,9 @@ describe('Subscription Service', () => {
 
       // Subscription lookup
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
         pending_plan_id: null,
       });
       // Insert payment history
@@ -353,7 +399,9 @@ describe('Subscription Service', () => {
 
       // Subscription lookup
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', user_id: 'user-1', plan_id: 'plan-pro',
+        id: 'sub-1',
+        user_id: 'user-1',
+        plan_id: 'plan-pro',
         stripe_subscription_id: 'sub_stripe',
       });
       // Insert payment history
@@ -370,7 +418,7 @@ describe('Subscription Service', () => {
           userId: 'user-1',
           attempt: 1,
         }),
-        expect.objectContaining({ delay: expect.any(Number) })
+        expect.objectContaining({ delay: expect.any(Number) }),
       );
     });
   });
@@ -379,22 +427,24 @@ describe('Subscription Service', () => {
     it('should do nothing if subscription not found', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
       await retryFailedPayment('nonexistent');
-      expect((mockStripe.invoices.list as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+      expect(mockStripe.invoices.list as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
     });
 
     it('should do nothing if no open invoices', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        stripe_subscription_id: 'sub_stripe',
       });
       (mockStripe.invoices.list as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: [] });
 
       await retryFailedPayment('sub-1');
-      expect((mockStripe.invoices.pay as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+      expect(mockStripe.invoices.pay as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
     });
 
     it('should mark subscription active when retry succeeds', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', stripe_subscription_id: 'sub_stripe',
+        id: 'sub-1',
+        stripe_subscription_id: 'sub_stripe',
       });
       (mockStripe.invoices.list as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         data: [{ id: 'inv_123' }],
@@ -538,26 +588,29 @@ describe('Subscription Service', () => {
   describe('updatePaymentMethod', () => {
     it('should attach payment method and set as default', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'sub-1', stripe_customer_id: 'cus_123',
-        stripe_subscription_id: 'sub_stripe', status: 'active',
+        id: 'sub-1',
+        stripe_customer_id: 'cus_123',
+        stripe_subscription_id: 'sub_stripe',
+        status: 'active',
       });
 
       await updatePaymentMethod('user-1', 'pm_new_card');
 
-      expect((mockStripe.paymentMethods.attach as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mockStripe.paymentMethods.attach as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         'pm_new_card',
-        { customer: 'cus_123' }
+        { customer: 'cus_123' },
       );
-      expect((mockStripe.customers.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mockStripe.customers.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         'cus_123',
-        { invoice_settings: { default_payment_method: 'pm_new_card' } }
+        { invoice_settings: { default_payment_method: 'pm_new_card' } },
       );
     });
 
     it('should throw if no active subscription', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
-      await expect(updatePaymentMethod('user-1', 'pm_card'))
-        .rejects.toThrow('No active subscription found');
+      await expect(updatePaymentMethod('user-1', 'pm_card')).rejects.toThrow(
+        'No active subscription found',
+      );
     });
   });
 });

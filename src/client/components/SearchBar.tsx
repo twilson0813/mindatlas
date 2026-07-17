@@ -28,10 +28,11 @@ export function SearchBar({ onSearch, categories = [], tags = [] }: SearchBarPro
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleChange = useCallback(
-    (field: keyof SearchFilters) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setFilters((prev) => ({ ...prev, [field]: e.target.value }));
-    },
-    []
+    (field: keyof SearchFilters) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFilters((prev) => ({ ...prev, [field]: e.target.value }));
+      },
+    [],
   );
 
   const handleSubmit = useCallback(
@@ -39,7 +40,7 @@ export function SearchBar({ onSearch, categories = [], tags = [] }: SearchBarPro
       e.preventDefault();
       onSearch(filters);
     },
-    [filters, onSearch]
+    [filters, onSearch],
   );
 
   const handleClear = useCallback(() => {
@@ -76,7 +77,12 @@ export function SearchBar({ onSearch, categories = [], tags = [] }: SearchBarPro
       </div>
 
       {isExpanded && (
-        <div className="search-bar__filters" id="search-filters" role="group" aria-label="Filter options">
+        <div
+          className="search-bar__filters"
+          id="search-filters"
+          role="group"
+          aria-label="Filter options"
+        >
           <div className="search-bar__filter-group">
             <label htmlFor="filter-category">Category</label>
             <select

@@ -142,11 +142,15 @@ describe('Property 8: Audit log completeness without credential leakage', () => 
 
   // Generator for credential-like strings: alphanumeric with enough length
   // to be meaningful (avoids false positives from short strings appearing in JSON structure)
-  const credentialStringArb = fc
-    .stringOf(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split('')), {
+  const credentialStringArb = fc.stringOf(
+    fc.constantFrom(
+      ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-'.split(''),
+    ),
+    {
       minLength: 5,
       maxLength: 100,
-    });
+    },
+  );
 
   // Generator for OpenAI credentials with arbitrary string values
   const openaiCredsArb = fc.record({
@@ -170,7 +174,7 @@ describe('Property 8: Audit log completeness without credential leakage', () => 
   const providerWithCredsArb = fc.oneof(
     openaiCredsArb.map((creds) => ({ provider: 'openai' as const, creds })),
     twilioCredsArb.map((creds) => ({ provider: 'twilio' as const, creds })),
-    stripeCredsArb.map((creds) => ({ provider: 'stripe' as const, creds }))
+    stripeCredsArb.map((creds) => ({ provider: 'stripe' as const, creds })),
   );
 
   it('audit log SHALL contain action, target_type, target_id, admin_user_id and SHALL NOT contain credential values', async () => {
@@ -180,9 +184,7 @@ describe('Property 8: Audit log completeness without credential leakage', () => 
         mockLogAuditEntry.mockClear();
 
         // Make the credential update request
-        const response = await request(app)
-          .post(`/api/admin/credentials/${provider}`)
-          .send(creds);
+        const response = await request(app).post(`/api/admin/credentials/${provider}`).send(creds);
 
         expect(response.status).toBe(200);
 

@@ -145,7 +145,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
      JOIN subscription_plans sp ON sp.id = s.plan_id
      WHERE s.user_id = $1
      ORDER BY s.created_at DESC LIMIT 1`,
-    [userId]
+    [userId],
   );
 
   if (!row) return null;
@@ -159,14 +159,14 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
 export async function subscribeToPlan(
   userId: string,
   planId: string,
-  paymentMethodId: string
+  paymentMethodId: string,
 ): Promise<UserSubscription> {
   const stripe = await getStripeClient();
 
   // Look up the plan
   const plan = await queryOne<PlanRow>(
     `SELECT * FROM subscription_plans WHERE id = $1 AND is_active = true`,
-    [planId]
+    [planId],
   );
   if (!plan) {
     throw new Error('Plan not found or is inactive');
@@ -175,7 +175,7 @@ export async function subscribeToPlan(
   // Check for existing subscription
   const existing = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status IN ('active', 'trialing')`,
-    [userId]
+    [userId],
   );
   if (existing) {
     throw new Error('User already has an active subscription. Use upgradePlan or downgradePlan.');
@@ -183,10 +183,9 @@ export async function subscribeToPlan(
 
   // Create or retrieve Stripe customer
   let stripeCustomerId: string;
-  const userRow = await queryOne<{ email: string }>(
-    `SELECT email FROM users WHERE id = $1`,
-    [userId]
-  );
+  const userRow = await queryOne<{ email: string }>(`SELECT email FROM users WHERE id = $1`, [
+    userId,
+  ]);
   if (!userRow) throw new Error('User not found');
 
   const customer = await stripe.customers.create({
@@ -215,9 +214,14 @@ export async function subscribeToPlan(
       planId,
       stripeSubscription.id,
       stripeCustomerId,
-      new Date((stripeSubscription as unknown as { current_period_start: number }).current_period_start * 1000),
-      new Date((stripeSubscription as unknown as { current_period_end: number }).current_period_end * 1000),
-    ]
+      new Date(
+        (stripeSubscription as unknown as { current_period_start: number }).current_period_start *
+          1000,
+      ),
+      new Date(
+        (stripeSubscription as unknown as { current_period_end: number }).current_period_end * 1000,
+      ),
+    ],
   );
 
   log.info({ userId, planId, stripeSubscriptionId: stripeSubscription.id }, 'Subscription created');
@@ -228,15 +232,12 @@ export async function subscribeToPlan(
  * Upgrades plan, prorates billing, and activates new features immediately.
  * Requirements: 18.7
  */
-export async function upgradePlan(
-  userId: string,
-  newPlanId: string
-): Promise<UserSubscription> {
+export async function upgradePlan(userId: string, newPlanId: string): Promise<UserSubscription> {
   const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
-    [userId]
+    [userId],
   );
   if (!subscription) {
     throw new Error('No active subscription found');
@@ -244,7 +245,7 @@ export async function upgradePlan(
 
   const newPlan = await queryOne<PlanRow>(
     `SELECT * FROM subscription_plans WHERE id = $1 AND is_active = true`,
-    [newPlanId]
+    [newPlanId],
   );
   if (!newPlan) {
     throw new Error('Target plan not found or is inactive');
@@ -253,9 +254,11 @@ export async function upgradePlan(
   // Update Stripe subscription with proration
   if (subscription.stripe_subscription_id) {
     const stripeSubscription = await stripe.subscriptions.retrieve(
-      subscription.stripe_subscription_id
+      subscription.stripe_subscription_id,
     );
-    const subscriptionItems = (stripeSubscription as unknown as { items: { data: Array<{ id: string }> } }).items;
+    const subscriptionItems = (
+      stripeSubscription as unknown as { items: { data: Array<{ id: string }> } }
+    ).items;
 
     await stripe.subscriptions.update(subscription.stripe_subscription_id, {
       items: [
@@ -275,7 +278,7 @@ export async function upgradePlan(
      SET plan_id = $1, pending_plan_id = NULL, updated_at = NOW()
      WHERE user_id = $2 AND status = 'active'
      RETURNING *`,
-    [newPlanId, userId]
+    [newPlanId, userId],
   );
 
   log.info({ userId, oldPlanId: subscription.plan_id, newPlanId }, 'Plan upgraded');
@@ -286,13 +289,10 @@ export async function upgradePlan(
  * Schedules a downgrade at the end of the current billing period.
  * Requirements: 18.8
  */
-export async function downgradePlan(
-  userId: string,
-  newPlanId: string
-): Promise<UserSubscription> {
+export async function downgradePlan(userId: string, newPlanId: string): Promise<UserSubscription> {
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
-    [userId]
+    [userId],
   );
   if (!subscription) {
     throw new Error('No active subscription found');
@@ -300,7 +300,7 @@ export async function downgradePlan(
 
   const newPlan = await queryOne<PlanRow>(
     `SELECT * FROM subscription_plans WHERE id = $1 AND is_active = true`,
-    [newPlanId]
+    [newPlanId],
   );
   if (!newPlan) {
     throw new Error('Target plan not found or is inactive');
@@ -312,16 +312,18 @@ export async function downgradePlan(
      SET pending_plan_id = $1, updated_at = NOW()
      WHERE user_id = $2 AND status = 'active'
      RETURNING *`,
-    [newPlanId, userId]
+    [newPlanId, userId],
   );
 
   // Get current plan name for the response
-  const currentPlan = await queryOne<PlanRow>(
-    `SELECT * FROM subscription_plans WHERE id = $1`,
-    [subscription.plan_id]
-  );
+  const currentPlan = await queryOne<PlanRow>(`SELECT * FROM subscription_plans WHERE id = $1`, [
+    subscription.plan_id,
+  ]);
 
-  log.info({ userId, currentPlanId: subscription.plan_id, pendingPlanId: newPlanId }, 'Downgrade scheduled');
+  log.info(
+    { userId, currentPlanId: subscription.plan_id, pendingPlanId: newPlanId },
+    'Downgrade scheduled',
+  );
   return mapSubscriptionRow(row!, currentPlan?.name ?? 'unknown');
 }
 
@@ -334,7 +336,7 @@ export async function cancelSubscription(userId: string): Promise<void> {
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
-    [userId]
+    [userId],
   );
   if (!subscription) {
     throw new Error('No active subscription found');
@@ -352,7 +354,7 @@ export async function cancelSubscription(userId: string): Promise<void> {
     `UPDATE subscriptions
      SET canceled_at = NOW(), updated_at = NOW()
      WHERE user_id = $1 AND status = 'active'`,
-    [userId]
+    [userId],
   );
 
   log.info({ userId, subscriptionId: subscription.id }, 'Subscription cancelled (period end)');
@@ -362,21 +364,14 @@ export async function cancelSubscription(userId: string): Promise<void> {
  * Processes Stripe webhook events with signature verification.
  * Requirements: 18.6, 18.7, 18.8, 18.11
  */
-export async function handleStripeWebhook(
-  rawBody: Buffer,
-  signature: string
-): Promise<void> {
+export async function handleStripeWebhook(rawBody: Buffer, signature: string): Promise<void> {
   const stripe = await getStripeClient();
 
   // Verify webhook signature
   let event: Stripe.Event;
   try {
     const webhookSecret = await getStripeWebhookSecret();
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      webhookSecret
-    );
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     log.error({ err }, 'Stripe webhook signature verification failed');
     throw new Error('Invalid webhook signature');
@@ -412,7 +407,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE stripe_subscription_id = $1`,
-    [stripeSubscriptionId]
+    [stripeSubscriptionId],
   );
   if (!subscription) return;
 
@@ -426,7 +421,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
       invoice.amount_paid,
       invoice.currency,
       invoice.payment_intent as string | null,
-    ]
+    ],
   );
 
   // If there's a pending downgrade and we've reached period end, apply it
@@ -435,7 +430,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
       `UPDATE subscriptions
        SET plan_id = pending_plan_id, pending_plan_id = NULL, updated_at = NOW()
        WHERE id = $1`,
-      [subscription.id]
+      [subscription.id],
     );
     log.info({ subscriptionId: subscription.id }, 'Pending downgrade applied at period renewal');
   }
@@ -449,7 +444,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE stripe_subscription_id = $1`,
-    [stripeSubscriptionId]
+    [stripeSubscriptionId],
   );
   if (!subscription) return;
 
@@ -463,14 +458,13 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
       invoice.amount_due,
       invoice.currency,
       invoice.payment_intent as string | null,
-    ]
+    ],
   );
 
   // Update subscription status to past_due
-  await queryOne(
-    `UPDATE subscriptions SET status = 'past_due', updated_at = NOW() WHERE id = $1`,
-    [subscription.id]
-  );
+  await queryOne(`UPDATE subscriptions SET status = 'past_due', updated_at = NOW() WHERE id = $1`, [
+    subscription.id,
+  ]);
 
   // Enqueue retry job (3 retries over 7 days)
   await stripePaymentRetryQueue.add(
@@ -483,16 +477,19 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     },
     {
       delay: 2 * 24 * 60 * 60 * 1000, // First retry in ~2 days
-    }
+    },
   );
 
-  log.warn({ subscriptionId: subscription.id, userId: subscription.user_id }, 'Payment failed, retry scheduled');
+  log.warn(
+    { subscriptionId: subscription.id, userId: subscription.user_id },
+    'Payment failed, retry scheduled',
+  );
 }
 
 async function handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription): Promise<void> {
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE stripe_subscription_id = $1`,
-    [stripeSubscription.id]
+    [stripeSubscription.id],
   );
   if (!subscription) return;
 
@@ -502,10 +499,15 @@ async function handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription
      SET current_period_start = $1, current_period_end = $2, updated_at = NOW()
      WHERE id = $3`,
     [
-      new Date((stripeSubscription as unknown as { current_period_start: number }).current_period_start * 1000),
-      new Date((stripeSubscription as unknown as { current_period_end: number }).current_period_end * 1000),
+      new Date(
+        (stripeSubscription as unknown as { current_period_start: number }).current_period_start *
+          1000,
+      ),
+      new Date(
+        (stripeSubscription as unknown as { current_period_end: number }).current_period_end * 1000,
+      ),
       subscription.id,
-    ]
+    ],
   );
 
   log.info({ subscriptionId: subscription.id }, 'Subscription updated from Stripe webhook');
@@ -514,13 +516,13 @@ async function handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription
 async function handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription): Promise<void> {
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE stripe_subscription_id = $1`,
-    [stripeSubscription.id]
+    [stripeSubscription.id],
   );
   if (!subscription) return;
 
   await queryOne(
     `UPDATE subscriptions SET status = 'cancelled', canceled_at = NOW(), updated_at = NOW() WHERE id = $1`,
-    [subscription.id]
+    [subscription.id],
   );
 
   log.info({ subscriptionId: subscription.id }, 'Subscription deleted via Stripe webhook');
@@ -536,7 +538,7 @@ export async function retryFailedPayment(subscriptionId: string): Promise<void> 
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE id = $1`,
-    [subscriptionId]
+    [subscriptionId],
   );
   if (!subscription || !subscription.stripe_subscription_id) {
     log.warn({ subscriptionId }, 'Subscription not found for payment retry');
@@ -561,10 +563,9 @@ export async function retryFailedPayment(subscriptionId: string): Promise<void> 
     await stripe.invoices.pay(invoice.id);
 
     // Payment succeeded — update subscription status
-    await queryOne(
-      `UPDATE subscriptions SET status = 'active', updated_at = NOW() WHERE id = $1`,
-      [subscriptionId]
-    );
+    await queryOne(`UPDATE subscriptions SET status = 'active', updated_at = NOW() WHERE id = $1`, [
+      subscriptionId,
+    ]);
 
     log.info({ subscriptionId }, 'Payment retry succeeded');
   } catch (err) {
@@ -573,7 +574,7 @@ export async function retryFailedPayment(subscriptionId: string): Promise<void> 
       `SELECT retry_count FROM payment_history
        WHERE subscription_id = $1 AND status = 'failed'
        ORDER BY created_at DESC LIMIT 1`,
-      [subscriptionId]
+      [subscriptionId],
     );
 
     const retryCount = (latestPayment?.retry_count ?? 0) + 1;
@@ -588,16 +589,19 @@ export async function retryFailedPayment(subscriptionId: string): Promise<void> 
         retryCount,
         retryCount < 3 ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) : null,
         subscriptionId,
-      ]
+      ],
     );
 
     if (retryCount >= 3) {
       // Max retries exhausted — cancel subscription
       await queryOne(
         `UPDATE subscriptions SET status = 'cancelled', canceled_at = NOW(), updated_at = NOW() WHERE id = $1`,
-        [subscriptionId]
+        [subscriptionId],
       );
-      log.error({ subscriptionId, retryCount }, 'Payment retries exhausted, subscription cancelled');
+      log.error(
+        { subscriptionId, retryCount },
+        'Payment retries exhausted, subscription cancelled',
+      );
     } else {
       log.warn({ subscriptionId, retryCount }, 'Payment retry failed, will retry again');
     }
@@ -610,17 +614,17 @@ export async function retryFailedPayment(subscriptionId: string): Promise<void> 
  */
 export async function checkEntitlement(
   userId: string,
-  featureKey: string
+  featureKey: string,
 ): Promise<EntitlementResult> {
   const subscription = await queryOne<{ plan_id: string; status: string }>(
     `SELECT plan_id, status FROM subscriptions WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
-    [userId]
+    [userId],
   );
 
   if (!subscription) {
     // Default to free plan entitlements
     const freePlan = await queryOne<{ id: string }>(
-      `SELECT id FROM subscription_plans WHERE name = 'free'`
+      `SELECT id FROM subscription_plans WHERE name = 'free'`,
     );
     const planId = freePlan?.id ?? 'free';
     const features = await loadEntitlements(planId);
@@ -659,7 +663,7 @@ export async function checkStorageLimit(userId: string): Promise<StorageLimitRes
      JOIN subscription_plans sp ON sp.id = s.plan_id
      WHERE s.user_id = $1 AND s.status = 'active'
      ORDER BY s.created_at DESC LIMIT 1`,
-    [userId]
+    [userId],
   );
 
   // Default to free plan limit if no subscription
@@ -670,7 +674,7 @@ export async function checkStorageLimit(userId: string): Promise<StorageLimitRes
     `SELECT COALESCE(SUM(file_size), 0) as total_bytes
      FROM "item"
      WHERE user_id = $1 AND is_deleted = false`,
-    [userId]
+    [userId],
   );
 
   const usedBytes = parseInt(usageRow?.total_bytes ?? '0', 10);
@@ -697,7 +701,7 @@ export async function checkAiQueryLimit(userId: string): Promise<AiLimitResult> 
      JOIN subscription_plans sp ON sp.id = s.plan_id
      WHERE s.user_id = $1 AND s.status = 'active'
      ORDER BY s.created_at DESC LIMIT 1`,
-    [userId]
+    [userId],
   );
 
   // Default to free plan limit if no subscription
@@ -708,7 +712,7 @@ export async function checkAiQueryLimit(userId: string): Promise<AiLimitResult> 
     return { allowed: true, usedToday: 0, dailyLimit: -1, remaining: -1 };
   }
 
-  // Count today's AI queries (using a simple items table approach; 
+  // Count today's AI queries (using a simple items table approach;
   // in production this would be a dedicated ai_query_log table)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -717,7 +721,7 @@ export async function checkAiQueryLimit(userId: string): Promise<AiLimitResult> 
     `SELECT COUNT(*) as count
      FROM ai_query_log
      WHERE user_id = $1 AND created_at >= $2`,
-    [userId, today]
+    [userId, today],
   );
 
   const usedToday = parseInt(usageRow?.count ?? '0', 10);
@@ -741,7 +745,7 @@ export async function getBillingHistory(userId: string): Promise<PaymentHistoryE
      FROM payment_history
      WHERE user_id = $1
      ORDER BY created_at DESC`,
-    [userId]
+    [userId],
   );
 
   return rows.map((row) => ({
@@ -758,15 +762,12 @@ export async function getBillingHistory(userId: string): Promise<PaymentHistoryE
  * Updates user's default payment method in Stripe.
  * Requirements: 18.9
  */
-export async function updatePaymentMethod(
-  userId: string,
-  paymentMethodId: string
-): Promise<void> {
+export async function updatePaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
   const stripe = await getStripeClient();
 
   const subscription = await queryOne<SubscriptionRow>(
     `SELECT * FROM subscriptions WHERE user_id = $1 AND status IN ('active', 'past_due')`,
-    [userId]
+    [userId],
   );
   if (!subscription || !subscription.stripe_customer_id) {
     throw new Error('No active subscription found');

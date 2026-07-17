@@ -64,9 +64,7 @@ describe('Property 4: Unauthenticated Request Rejection', () => {
       // "Digest" scheme
       fc.string({ minLength: 1, maxLength: 100 }).map((s) => `Digest ${s}`),
       // Random strings that don't start with "Bearer "
-      fc.string({ minLength: 1, maxLength: 200 }).filter(
-        (s) => !s.startsWith('Bearer '),
-      ),
+      fc.string({ minLength: 1, maxLength: 200 }).filter((s) => !s.startsWith('Bearer ')),
       // Just the word "Bearer" without a space after it
       fc.constant('Bearer'),
       // "bearer" lowercase (case-sensitive check)
@@ -141,9 +139,9 @@ describe('Property 4: Unauthenticated Request Rejection', () => {
 
   it('should return 401 when JWT is signed with a wrong secret', () => {
     // Generate JWTs with random wrong secrets (different from config.jwtSecret)
-    const wrongSecretArb = fc.string({ minLength: 10, maxLength: 64 }).filter(
-      (s) => s !== config.jwtSecret,
-    );
+    const wrongSecretArb = fc
+      .string({ minLength: 10, maxLength: 64 })
+      .filter((s) => s !== config.jwtSecret);
 
     const userPayloadArb = fc.record({
       sub: fc.uuid(),
@@ -154,10 +152,7 @@ describe('Property 4: Unauthenticated Request Rejection', () => {
     fc.assert(
       fc.property(wrongSecretArb, userPayloadArb, (wrongSecret, payload) => {
         const now = Math.floor(Date.now() / 1000);
-        const token = jwt.sign(
-          { ...payload, iat: now, exp: now + 900 },
-          wrongSecret,
-        );
+        const token = jwt.sign({ ...payload, iat: now, exp: now + 900 }, wrongSecret);
 
         const req = createMockRequest({ authorization: `Bearer ${token}` }) as Request;
         const res = createMockResponse() as Response;
@@ -176,23 +171,29 @@ describe('Property 4: Unauthenticated Request Rejection', () => {
     // Generate malformed JWT-like strings
     const malformedJwtArb = fc.oneof(
       // Only one dot (missing a segment)
-      fc.tuple(
-        fc.base64String({ minLength: 5, maxLength: 50 }),
-        fc.base64String({ minLength: 5, maxLength: 50 }),
-      ).map(([a, b]) => `${a}.${b}`),
+      fc
+        .tuple(
+          fc.base64String({ minLength: 5, maxLength: 50 }),
+          fc.base64String({ minLength: 5, maxLength: 50 }),
+        )
+        .map(([a, b]) => `${a}.${b}`),
       // Four dots (too many segments)
-      fc.tuple(
-        fc.base64String({ minLength: 5, maxLength: 30 }),
-        fc.base64String({ minLength: 5, maxLength: 30 }),
-        fc.base64String({ minLength: 5, maxLength: 30 }),
-        fc.base64String({ minLength: 5, maxLength: 30 }),
-      ).map(([a, b, c, d]) => `${a}.${b}.${c}.${d}`),
+      fc
+        .tuple(
+          fc.base64String({ minLength: 5, maxLength: 30 }),
+          fc.base64String({ minLength: 5, maxLength: 30 }),
+          fc.base64String({ minLength: 5, maxLength: 30 }),
+          fc.base64String({ minLength: 5, maxLength: 30 }),
+        )
+        .map(([a, b, c, d]) => `${a}.${b}.${c}.${d}`),
       // Three dots but with invalid base64 content
-      fc.tuple(
-        fc.string({ minLength: 3, maxLength: 30 }),
-        fc.string({ minLength: 3, maxLength: 30 }),
-        fc.string({ minLength: 3, maxLength: 30 }),
-      ).map(([a, b, c]) => `${a}.${b}.${c}`),
+      fc
+        .tuple(
+          fc.string({ minLength: 3, maxLength: 30 }),
+          fc.string({ minLength: 3, maxLength: 30 }),
+          fc.string({ minLength: 3, maxLength: 30 }),
+        )
+        .map(([a, b, c]) => `${a}.${b}.${c}`),
       // Empty segments with dots
       fc.constantFrom('..', '...', 'a..b', '.a.b', 'a.b.'),
     );

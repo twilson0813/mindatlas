@@ -21,10 +21,15 @@ import { queryOne } from '../db/db.js';
 
 const mockedQueryOne = vi.mocked(queryOne);
 
-function createMockRequest(params: Record<string, string>, user?: { sub: string }): Partial<Request> {
+function createMockRequest(
+  params: Record<string, string>,
+  user?: { sub: string },
+): Partial<Request> {
   return {
     params: params as Request['params'],
-    user: user ? { sub: user.sub, email: 'test@example.com', role: 'user', iat: 0, exp: 0 } : undefined,
+    user: user
+      ? { sub: user.sub, email: 'test@example.com', role: 'user', iat: 0, exp: 0 }
+      : undefined,
   };
 }
 
@@ -55,7 +60,7 @@ describe('Property 3: Ownership Enforcement', () => {
     vi.clearAllMocks();
   });
 
-  it('should always return 403 when userB accesses userA\'s resource', async () => {
+  it("should always return 403 when userB accesses userA's resource", async () => {
     await fc.assert(
       fc.asyncProperty(
         distinctUserPairArb,

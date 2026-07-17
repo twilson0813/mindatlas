@@ -72,14 +72,16 @@ export function generateRawKey(): string {
  * @param payload - The webhook payload from n8n
  * @returns The created item
  */
-export async function handleWebhook(
-  userId: string,
-  payload: WebhookPayload
-): Promise<Item> {
-  log.info({ userId, payload: { ...payload, content: '[redacted]' } }, 'Processing n8n webhook payload');
+export async function handleWebhook(userId: string, payload: WebhookPayload): Promise<Item> {
+  log.info(
+    { userId, payload: { ...payload, content: '[redacted]' } },
+    'Processing n8n webhook payload',
+  );
 
   if (!payload.content || typeof payload.content !== 'string' || payload.content.trim() === '') {
-    const error = new Error('Webhook payload must include non-empty "content" field') as Error & { statusCode?: number };
+    const error = new Error('Webhook payload must include non-empty "content" field') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 400;
     throw error;
   }
@@ -108,10 +110,7 @@ export async function handleWebhook(
  * @param label - A human-readable label for the key
  * @returns The generated key data (includes raw key shown only once)
  */
-export async function generateApiKey(
-  userId: string,
-  label: string
-): Promise<GeneratedApiKey> {
+export async function generateApiKey(userId: string, label: string): Promise<GeneratedApiKey> {
   if (!label || typeof label !== 'string' || label.trim() === '') {
     const error = new Error('API key label is required') as Error & { statusCode?: number };
     error.statusCode = 400;
@@ -125,7 +124,7 @@ export async function generateApiKey(
     `INSERT INTO api_keys (user_id, key_hash, label)
      VALUES ($1, $2, $3)
      RETURNING id, created_at`,
-    [userId, keyHash, label.trim()]
+    [userId, keyHash, label.trim()],
   );
 
   if (!result) {
@@ -155,11 +154,13 @@ export async function revokeApiKey(userId: string, keyId: string): Promise<void>
   const result = await query(
     `UPDATE api_keys SET is_active = false
      WHERE id = $1 AND user_id = $2 AND is_active = true`,
-    [keyId, userId]
+    [keyId, userId],
   );
 
   if (result.rowCount === 0) {
-    const error = new Error('API key not found or already revoked') as Error & { statusCode?: number };
+    const error = new Error('API key not found or already revoked') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 404;
     throw error;
   }
@@ -180,7 +181,7 @@ export async function listApiKeys(userId: string): Promise<ApiKeyResponse[]> {
      FROM api_keys
      WHERE user_id = $1
      ORDER BY created_at DESC`,
-    [userId]
+    [userId],
   );
 
   return rows.map((row) => ({
@@ -204,7 +205,7 @@ export async function findActiveKeyByHash(keyHash: string): Promise<ApiKeyRow | 
     `SELECT id, user_id, key_hash, label, is_active, last_used_at, created_at
      FROM api_keys
      WHERE key_hash = $1 AND is_active = true`,
-    [keyHash]
+    [keyHash],
   );
 
   return row;
@@ -217,8 +218,5 @@ export async function findActiveKeyByHash(keyHash: string): Promise<ApiKeyRow | 
  * @param keyId - The API key ID
  */
 export async function updateKeyLastUsed(keyId: string): Promise<void> {
-  await query(
-    `UPDATE api_keys SET last_used_at = NOW() WHERE id = $1`,
-    [keyId]
-  );
+  await query(`UPDATE api_keys SET last_used_at = NOW() WHERE id = $1`, [keyId]);
 }

@@ -76,7 +76,7 @@ export async function verifyPhoneNumber(phoneNumber: string): Promise<UserRow | 
 
   const user = await queryOne<UserRow>(
     'SELECT id, email, phone_number FROM users WHERE phone_number = $1',
-    [normalizedPhone]
+    [normalizedPhone],
   );
 
   return user;
@@ -147,7 +147,10 @@ export async function handleIncoming(from: string, body: string): Promise<void> 
     });
 
     // Step 3: Send confirmation reply
-    await sendReply(from, `Item received and saved (ID: ${item.id}). Your note has been added to MindAtlas.`);
+    await sendReply(
+      from,
+      `Item received and saved (ID: ${item.id}). Your note has been added to MindAtlas.`,
+    );
 
     log.info({ userId: user.id, itemId: item.id, from }, 'SMS processed successfully');
   } catch (error) {

@@ -74,10 +74,23 @@ describe('Property 15: Structured Log Output', () => {
   it('should produce valid JSON for log events with additional context bindings', () => {
     // Avoid keys that conflict with JS prototype properties or pino internals
     const reservedKeys = new Set([
-      'constructor', 'toString', 'valueOf', 'hasOwnProperty', 'toLocaleString',
-      'isPrototypeOf', 'propertyIsEnumerable', '__proto__', '__defineGetter__',
-      '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
-      'level', 'time', 'msg', 'pid', 'hostname',
+      'constructor',
+      'toString',
+      'valueOf',
+      'hasOwnProperty',
+      'toLocaleString',
+      'isPrototypeOf',
+      'propertyIsEnumerable',
+      '__proto__',
+      '__defineGetter__',
+      '__defineSetter__',
+      '__lookupGetter__',
+      '__lookupSetter__',
+      'level',
+      'time',
+      'msg',
+      'pid',
+      'hostname',
     ]);
     const safeKeyArb = fc
       .string({ minLength: 1, maxLength: 20 })
@@ -121,20 +134,32 @@ describe('Property 15: Structured Log Output', () => {
   it('should produce valid JSON for child loggers at any level', () => {
     // Avoid keys that conflict with JS prototype properties or pino internals
     const reservedKeys = new Set([
-      'constructor', 'toString', 'valueOf', 'hasOwnProperty', 'toLocaleString',
-      'isPrototypeOf', 'propertyIsEnumerable', '__proto__', '__defineGetter__',
-      '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
-      'level', 'time', 'msg', 'pid', 'hostname',
+      'constructor',
+      'toString',
+      'valueOf',
+      'hasOwnProperty',
+      'toLocaleString',
+      'isPrototypeOf',
+      'propertyIsEnumerable',
+      '__proto__',
+      '__defineGetter__',
+      '__defineSetter__',
+      '__lookupGetter__',
+      '__lookupSetter__',
+      'level',
+      'time',
+      'msg',
+      'pid',
+      'hostname',
     ]);
     const safeKeyArb = fc
       .string({ minLength: 1, maxLength: 15 })
       .filter((s) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s) && !reservedKeys.has(s));
 
-    const bindingsArb = fc.dictionary(
-      safeKeyArb,
-      fc.oneof(fc.string(), fc.integer()),
-      { minKeys: 1, maxKeys: 3 },
-    );
+    const bindingsArb = fc.dictionary(safeKeyArb, fc.oneof(fc.string(), fc.integer()), {
+      minKeys: 1,
+      maxKeys: 3,
+    });
 
     fc.assert(
       fc.property(levelArb, messageArb, bindingsArb, (level, message, bindings) => {

@@ -33,7 +33,7 @@ export function UploadPage() {
         throw new Error(errorData.message || 'Upload failed');
       }
     },
-    []
+    [],
   );
 
   const handleCsvImport = useCallback(async (file: File) => {
@@ -71,12 +71,15 @@ export function UploadPage() {
 
       <main className="upload-page__content">
         <div className="upload-page__nav">
-          <a href="/" className="upload-page__back">← Back to Dashboard</a>
+          <a href="/" className="upload-page__back">
+            ← Back to Dashboard
+          </a>
         </div>
 
         <h2>Upload Items</h2>
         <p className="text-muted">
-          Add new items to your collection by entering text, uploading files, or importing in bulk via CSV.
+          Add new items to your collection by entering text, uploading files, or importing in bulk
+          via CSV.
         </p>
 
         <section className="upload-section" aria-labelledby="single-upload-heading">
@@ -87,7 +90,9 @@ export function UploadPage() {
         <hr className="upload-divider" />
 
         <section className="upload-section" aria-labelledby="csv-upload-heading">
-          <h3 id="csv-upload-heading" className="visually-hidden">CSV Bulk Import</h3>
+          <h3 id="csv-upload-heading" className="visually-hidden">
+            CSV Bulk Import
+          </h3>
           <CsvUpload onImport={handleCsvImport} />
         </section>
       </main>

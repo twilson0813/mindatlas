@@ -102,7 +102,7 @@ describe('SMS Gateway Service', () => {
       expect(result).toEqual(mockUser);
       expect(mockQueryOne).toHaveBeenCalledWith(
         'SELECT id, email, phone_number FROM "user" WHERE phone_number = $1',
-        ['+14155551234']
+        ['+14155551234'],
       );
     });
 
@@ -121,7 +121,7 @@ describe('SMS Gateway Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         'SELECT id, email, phone_number FROM "user" WHERE phone_number = $1',
-        ['+14155551234']
+        ['+14155551234'],
       );
     });
   });

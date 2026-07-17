@@ -8,7 +8,11 @@ import {
   handleStripeWebhook,
   setStripeClient,
 } from '../services/subscription/index.js';
-import { requireEntitlement, loadEntitlements, invalidateCache } from '../middleware/entitlement.js';
+import {
+  requireEntitlement,
+  loadEntitlements,
+  invalidateCache,
+} from '../middleware/entitlement.js';
 import type { Request, Response, NextFunction } from 'express';
 
 /**
@@ -314,9 +318,9 @@ describe('Subscription & Entitlement Flow - Integration', () => {
       expect(upgraded.planId).toBe('plan-enterprise');
 
       // Stripe was updated with proration
-      expect((mockStripe.subscriptions.update as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mockStripe.subscriptions.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         'sub_integration_test',
-        expect.objectContaining({ proration_behavior: 'create_prorations' })
+        expect.objectContaining({ proration_behavior: 'create_prorations' }),
       );
 
       // Step 2: Check ai.priority_processing — should be allowed immediately
@@ -404,7 +408,9 @@ describe('Subscription & Entitlement Flow - Integration', () => {
         },
       };
 
-      (mockStripe.webhooks.constructEvent as ReturnType<typeof vi.fn>).mockReturnValue(webhookEvent);
+      (mockStripe.webhooks.constructEvent as ReturnType<typeof vi.fn>).mockReturnValue(
+        webhookEvent,
+      );
 
       // Subscription lookup for webhook — has pending downgrade
       mockQueryOne.mockResolvedValueOnce({
@@ -482,7 +488,7 @@ describe('Subscription & Entitlement Flow - Integration', () => {
         data: [{ id: 'inv_open_1' }],
       });
       (mockStripe.invoices.pay as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Card declined')
+        new Error('Card declined'),
       );
       // Retry count lookup
       mockQueryOne.mockResolvedValueOnce({ retry_count: 0 });
@@ -501,7 +507,7 @@ describe('Subscription & Entitlement Flow - Integration', () => {
         data: [{ id: 'inv_open_2' }],
       });
       (mockStripe.invoices.pay as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Card declined')
+        new Error('Card declined'),
       );
       mockQueryOne.mockResolvedValueOnce({ retry_count: 1 });
       mockQueryOne.mockResolvedValueOnce(null);
@@ -518,7 +524,7 @@ describe('Subscription & Entitlement Flow - Integration', () => {
         data: [{ id: 'inv_open_3' }],
       });
       (mockStripe.invoices.pay as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Card declined')
+        new Error('Card declined'),
       );
       // Retry count is now 2, so next increment makes 3 → exhausted
       mockQueryOne.mockResolvedValueOnce({ retry_count: 2 });

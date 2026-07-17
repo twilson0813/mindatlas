@@ -22,7 +22,7 @@ function createTestApp(validationChain: unknown[]) {
     handleValidationErrors,
     (_req, res) => {
       res.status(200).json({ success: true, body: _req.body });
-    }
+    },
   );
   return app;
 }
@@ -47,7 +47,7 @@ describe('validateEmail', () => {
     expect(res.body.details).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ message: 'Must be a valid email address' }),
-      ])
+      ]),
     );
   });
 
@@ -79,7 +79,7 @@ describe('validatePassword', () => {
         expect.objectContaining({
           message: 'Password must be at least 8 characters long',
         }),
-      ])
+      ]),
     );
   });
 
@@ -91,7 +91,7 @@ describe('validatePassword', () => {
         expect.objectContaining({
           message: 'Password must contain at least one uppercase letter',
         }),
-      ])
+      ]),
     );
   });
 
@@ -103,7 +103,7 @@ describe('validatePassword', () => {
         expect.objectContaining({
           message: 'Password must contain at least one lowercase letter',
         }),
-      ])
+      ]),
     );
   });
 
@@ -115,7 +115,7 @@ describe('validatePassword', () => {
         expect.objectContaining({
           message: 'Password must contain at least one digit',
         }),
-      ])
+      ]),
     );
   });
 
@@ -127,7 +127,7 @@ describe('validatePassword', () => {
         expect.objectContaining({
           message: 'Password must contain at least one special character',
         }),
-      ])
+      ]),
     );
   });
 });
@@ -144,9 +144,7 @@ describe('validateTextContent', () => {
     const res = await request(app).post('/test').send({ content: '' });
     expect(res.status).toBe(400);
     expect(res.body.details).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ message: 'Content is required' }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ message: 'Content is required' })]),
     );
   });
 
@@ -167,7 +165,7 @@ describe('validateTextContent', () => {
         expect.objectContaining({
           message: 'Content must not exceed 50000 characters',
         }),
-      ])
+      ]),
     );
   });
 });
@@ -195,7 +193,7 @@ describe('validateContentType', () => {
         expect.objectContaining({
           message: expect.stringContaining('Content type must be one of'),
         }),
-      ])
+      ]),
     );
   });
 });
@@ -204,9 +202,7 @@ describe('validateItemCreation', () => {
   const app = createTestApp(validateItemCreation);
 
   it('accepts valid item with content and content_type', async () => {
-    const res = await request(app)
-      .post('/test')
-      .send({ content: 'My note', content_type: 'note' });
+    const res = await request(app).post('/test').send({ content: 'My note', content_type: 'note' });
     expect(res.status).toBe(200);
   });
 
@@ -250,9 +246,7 @@ describe('validateRegistration', () => {
   });
 
   it('rejects invalid email with valid password', async () => {
-    const res = await request(app)
-      .post('/test')
-      .send({ email: 'invalid', password: 'MyP@ss1!' });
+    const res = await request(app).post('/test').send({ email: 'invalid', password: 'MyP@ss1!' });
     expect(res.status).toBe(400);
   });
 

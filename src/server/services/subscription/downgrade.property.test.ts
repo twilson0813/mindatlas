@@ -1,11 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import {
-  downgradePlan,
-  cancelSubscription,
-  checkEntitlement,
-  setStripeClient,
-} from './index.js';
+import { downgradePlan, cancelSubscription, checkEntitlement, setStripeClient } from './index.js';
 
 // ─── Mock Dependencies ───────────────────────────────────────────────────────
 
@@ -61,10 +56,7 @@ type PlanName = (typeof planNames)[number];
 
 /** Generates a pair of distinct plan names where current > target (valid downgrade) */
 const downgradePairArb = fc
-  .tuple(
-    fc.constantFrom<PlanName>('pro', 'enterprise'),
-    fc.constantFrom<PlanName>('free', 'pro'),
-  )
+  .tuple(fc.constantFrom<PlanName>('pro', 'enterprise'), fc.constantFrom<PlanName>('free', 'pro'))
   .filter(([current, target]) => current !== target);
 
 const userIdArb = fc.uuid();
@@ -233,11 +225,11 @@ describe('Property 32: Plan Downgrade Grace Period', () => {
           await cancelSubscription(userId);
 
           // Stripe should be told to cancel at period end (not immediately)
-          const stripeUpdate = (mockStripe.subscriptions as { update: ReturnType<typeof vi.fn> }).update;
-          expect(stripeUpdate).toHaveBeenCalledWith(
-            'sub_stripe_xyz',
-            { cancel_at_period_end: true },
-          );
+          const stripeUpdate = (mockStripe.subscriptions as { update: ReturnType<typeof vi.fn> })
+            .update;
+          expect(stripeUpdate).toHaveBeenCalledWith('sub_stripe_xyz', {
+            cancel_at_period_end: true,
+          });
 
           // DB update should set canceled_at but NOT change status to 'canceled'
           const updateCall = mockQueryOne.mock.calls[1];
@@ -271,7 +263,11 @@ describe('Property 32: Plan Downgrade Grace Period', () => {
           });
 
           // Mock: loadEntitlements returns features for the current plan (includes the feature)
-          mockLoadEntitlements.mockResolvedValueOnce([featureKey, 'ai.categorization', 'export.csv']);
+          mockLoadEntitlements.mockResolvedValueOnce([
+            featureKey,
+            'ai.categorization',
+            'export.csv',
+          ]);
 
           const result = await checkEntitlement(userId, featureKey);
 

@@ -21,7 +21,9 @@ vi.mock('../db/db.js', () => ({
 // Mock Redis for entitlement middleware
 vi.mock('../redis.js', () => ({
   redisClient: {
-    get: vi.fn(() => Promise.resolve(JSON.stringify(['integration.n8n', 'input.api', 'input.csv']))),
+    get: vi.fn(() =>
+      Promise.resolve(JSON.stringify(['integration.n8n', 'input.api', 'input.csv'])),
+    ),
     set: vi.fn(() => Promise.resolve('OK')),
     del: vi.fn(() => Promise.resolve(1)),
   },
@@ -132,16 +134,16 @@ describe('POST /api/webhooks/n8n', () => {
   it('should return 401 without API key', async () => {
     mockFindActiveKey.mockResolvedValue(null);
 
-    const response = await request(app)
-      .post('/api/webhooks/n8n')
-      .send({ content: 'test' });
+    const response = await request(app).post('/api/webhooks/n8n').send({ content: 'test' });
 
     expect(response.status).toBe(401);
     expect(mockHandleWebhook).not.toHaveBeenCalled();
   });
 
   it('should return 400 for invalid payload', async () => {
-    const error = new Error('Webhook payload must include non-empty "content" field') as Error & { statusCode?: number };
+    const error = new Error('Webhook payload must include non-empty "content" field') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 400;
     mockHandleWebhook.mockRejectedValue(error);
 

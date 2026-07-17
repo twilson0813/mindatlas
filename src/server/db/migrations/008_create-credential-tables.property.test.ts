@@ -49,9 +49,9 @@ describe('Property 7: Migration data preservation', () => {
     access_token_encrypted: fc.string({ minLength: 10, maxLength: 200 }),
     workspace_id: fc.string({ minLength: 1, maxLength: 100 }).filter((s) => s.trim().length > 0),
     workspace_name: fc.string({ minLength: 1, maxLength: 100 }).filter((s) => s.trim().length > 0),
-    connected_at: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map(
-      (d) => d.toISOString()
-    ),
+    connected_at: fc
+      .date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') })
+      .map((d) => d.toISOString()),
   });
 
   it('should map each notion_connections row to a user_integrations row with correct field mapping', () => {
@@ -104,7 +104,7 @@ describe('Property 7: Migration data preservation', () => {
 
           // Find the migration INSERT SQL
           const migrateSql = sqlStatements.find(
-            (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections')
+            (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections'),
           );
 
           expect(migrateSql).toBeDefined();
@@ -146,7 +146,7 @@ describe('Property 7: Migration data preservation', () => {
             expect(transformed.metadata.workspace_name).toBe(notionRow.workspace_name);
             expect(transformed.connected_at).toBe(notionRow.connected_at);
           }
-        }
+        },
       ),
       { numRuns: 100 },
     );
@@ -159,9 +159,13 @@ describe('Property 7: Migration data preservation', () => {
 
         // The result has exactly the expected shape — no extra or missing fields
         const resultKeys = Object.keys(result).sort();
-        expect(resultKeys).toEqual(
-          ['connected_at', 'credentials_encrypted', 'metadata', 'provider', 'user_id']
-        );
+        expect(resultKeys).toEqual([
+          'connected_at',
+          'credentials_encrypted',
+          'metadata',
+          'provider',
+          'user_id',
+        ]);
 
         // metadata has exactly workspace_id and workspace_name
         const metadataKeys = Object.keys(result.metadata).sort();

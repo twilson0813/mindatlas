@@ -38,7 +38,7 @@ describe('ItemDetail', () => {
 
     expect(screen.getByText('Test Item Title')).toBeInTheDocument();
     expect(
-      screen.getByText('This is the full content of the item for testing purposes.')
+      screen.getByText('This is the full content of the item for testing purposes.'),
     ).toBeInTheDocument();
   });
 
@@ -90,9 +90,7 @@ describe('ItemDetail', () => {
     const user = userEvent.setup();
     render(<ItemDetail item={mockItem} onRelatedItemClick={onRelatedItemClick} />);
 
-    await user.click(
-      screen.getByRole('button', { name: /view related item: related item one/i })
-    );
+    await user.click(screen.getByRole('button', { name: /view related item: related item one/i }));
 
     expect(onRelatedItemClick).toHaveBeenCalledWith('item-2');
   });
@@ -135,7 +133,7 @@ describe('ItemDetail', () => {
     render(<ItemDetail item={mockItem} />);
 
     expect(
-      screen.getByRole('article', { name: /details for test item title/i })
+      screen.getByRole('article', { name: /details for test item title/i }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/item content/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/assigned categories/i)).toBeInTheDocument();

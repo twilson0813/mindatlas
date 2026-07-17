@@ -58,7 +58,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should create platform_credentials with correct columns', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'platform_credentials'
+        (call) => call[0] === 'platform_credentials',
       );
       expect(createTableCall).toBeDefined();
 
@@ -80,7 +80,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should create user_integrations with correct columns', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'user_integrations'
+        (call) => call[0] === 'user_integrations',
       );
       expect(createTableCall).toBeDefined();
 
@@ -108,7 +108,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should add unique constraint on (user_id, provider) for user_integrations', () => {
       const constraint = mock.addedConstraints.find(
-        (c) => c.table === 'user_integrations' && c.name === 'uq_user_integrations_user_provider'
+        (c) => c.table === 'user_integrations' && c.name === 'uq_user_integrations_user_provider',
       );
       expect(constraint).toBeDefined();
       expect(constraint!.constraint).toEqual({ unique: ['user_id', 'provider'] });
@@ -123,7 +123,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should migrate notion_connections data into user_integrations', () => {
       const migrateSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections')
+        (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections'),
       );
       expect(migrateSql).toBeDefined();
       expect(migrateSql).toContain("'notion'");
@@ -149,7 +149,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should recreate notion_connections with correct columns', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'notion_connections'
+        (call) => call[0] === 'notion_connections',
       );
       expect(createTableCall).toBeDefined();
 
@@ -173,7 +173,7 @@ describe('Migration 008: Create credential tables', () => {
 
     it('should migrate data back from user_integrations to notion_connections', () => {
       const migrateSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO notion_connections') && s.includes('user_integrations')
+        (s) => s.includes('INSERT INTO notion_connections') && s.includes('user_integrations'),
       );
       expect(migrateSql).toBeDefined();
       expect(migrateSql).toContain("provider = 'notion'");
