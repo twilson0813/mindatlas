@@ -21,7 +21,7 @@ describe('Database module', () => {
 
     it('should use DATABASE_URL from config', () => {
       const config = getPoolConfig();
-      expect(config.connectionString).toContain('postgresql');
+      expect(config.connectionString).toMatch(/postgres(ql)?:/);
     });
   });
 

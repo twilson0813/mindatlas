@@ -101,7 +101,7 @@ describe('SMS Gateway Service', () => {
 
       expect(result).toEqual(mockUser);
       expect(mockQueryOne).toHaveBeenCalledWith(
-        'SELECT id, email, phone_number FROM "user" WHERE phone_number = $1',
+        'SELECT id, email, phone_number FROM users WHERE phone_number = $1',
         ['+14155551234'],
       );
     });
@@ -120,7 +120,7 @@ describe('SMS Gateway Service', () => {
       await verifyPhoneNumber('1-415-555-1234');
 
       expect(mockQueryOne).toHaveBeenCalledWith(
-        'SELECT id, email, phone_number FROM "user" WHERE phone_number = $1',
+        'SELECT id, email, phone_number FROM users WHERE phone_number = $1',
         ['+14155551234'],
       );
     });

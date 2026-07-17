@@ -105,8 +105,8 @@ describe('Purge Worker - processPurgeJob', () => {
     expect(result.failedCount).toBe(0);
     expect(mockDeleteFile).not.toHaveBeenCalled();
     expect(mockQuery).toHaveBeenCalledTimes(2);
-    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM item WHERE id = $1', ['item-1']);
-    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM item WHERE id = $1', ['item-2']);
+    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM items WHERE id = $1', ['item-1']);
+    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM items WHERE id = $1', ['item-2']);
   });
 
   it('should delete file from storage before hard-deleting the row', async () => {
@@ -123,7 +123,7 @@ describe('Purge Worker - processPurgeJob', () => {
     expect(result.purgedCount).toBe(1);
     expect(result.failedCount).toBe(0);
     expect(mockDeleteFile).toHaveBeenCalledWith('user-1/abc123.pdf');
-    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM item WHERE id = $1', ['item-1']);
+    expect(mockQuery).toHaveBeenCalledWith('DELETE FROM items WHERE id = $1', ['item-1']);
   });
 
   it('should handle mix of items with and without files', async () => {

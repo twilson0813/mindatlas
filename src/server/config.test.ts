@@ -7,7 +7,7 @@ describe('Config', () => {
 
     expect(cfg.port).toBe(3000);
     expect(typeof cfg.nodeEnv).toBe('string');
-    expect(cfg.databaseUrl).toContain('postgresql://');
+    expect(cfg.databaseUrl).toMatch(/postgres(ql)?:\/\//);
     expect(cfg.redisUrl).toContain('redis://');
   });
 
