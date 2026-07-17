@@ -37,7 +37,7 @@ jobs:
         run: npm run format:check
 
       - name: TypeScript type check
-        run: npx tsc --noEmit
+        run: npx tsc -p tsconfig.server.json --noEmit
 
   test:
     name: Test
