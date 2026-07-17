@@ -92,7 +92,7 @@ jobs:
         run: npm ci
 
       - name: Run database migrations
-        run: npm run migrate:up
+        run: node --import tsx/esm ./node_modules/.bin/node-pg-migrate up --migrations-dir migrations --migration-file-language ts
 
       - name: Run unit and property-based tests
         run: npm test
