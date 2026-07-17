@@ -11,12 +11,7 @@ import { AdminDataAccess, ContentAccessViolationError } from './index.js';
  */
 describe('Property 26: Admin Content Isolation', () => {
   // ─── Forbidden fields that must never appear in admin responses ─────────────
-  const FORBIDDEN_FIELDS = [
-    'content_encrypted',
-    'file_path',
-    'content',
-    'file_data',
-  ] as const;
+  const FORBIDDEN_FIELDS = ['content_encrypted', 'file_path', 'content', 'file_data'] as const;
 
   // ─── Generators ────────────────────────────────────────────────────────────
 
@@ -27,7 +22,7 @@ describe('Property 26: Admin Content Isolation', () => {
       (s) =>
         s.trim().length > 0 &&
         !FORBIDDEN_FIELDS.includes(s as any) &&
-        /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s)
+        /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s),
     );
 
   // Generator for arbitrary field values (simulating user content)
@@ -67,7 +62,7 @@ describe('Property 26: Admin Content Isolation', () => {
             }
           }
           return result;
-        })
+        }),
     )
     // Ensure at least one forbidden field is present
     .filter((obj) => FORBIDDEN_FIELDS.some((field) => field in obj));
@@ -123,9 +118,7 @@ describe('Property 26: Admin Content Isolation', () => {
   it('validateQuerySafety always throws ContentAccessViolationError for SQL containing forbidden fields', () => {
     fc.assert(
       fc.property(sqlWithForbiddenFieldArb, (sql) => {
-        expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(
-          ContentAccessViolationError,
-        );
+        expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(ContentAccessViolationError);
       }),
       { numRuns: 200 },
     );

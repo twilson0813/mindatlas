@@ -47,7 +47,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <AuthConsumer />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -66,7 +66,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <AuthConsumer />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -85,7 +85,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <AuthConsumer />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -102,7 +102,11 @@ describe('AuthContext', () => {
 
   it('handles successful login', async () => {
     const futureExp = Math.floor(Date.now() / 1000) + 900;
-    const accessToken = createMockToken({ sub: 'user-2', email: 'test@example.com', exp: futureExp });
+    const accessToken = createMockToken({
+      sub: 'user-2',
+      email: 'test@example.com',
+      exp: futureExp,
+    });
 
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -112,7 +116,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <AuthConsumer />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -162,7 +166,7 @@ describe('AuthContext', () => {
     render(
       <AuthProvider>
         <LoginErrorConsumer />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     const user = userEvent.setup();

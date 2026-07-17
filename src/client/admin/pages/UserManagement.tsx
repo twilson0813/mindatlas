@@ -63,7 +63,7 @@ export function UserManagement() {
         setActionLoading(null);
       }
     },
-    [fetchUsers]
+    [fetchUsers],
   );
 
   if (loading) {
@@ -105,9 +105,7 @@ export function UserManagement() {
                 <span className="admin-badge">{user.subscriptionTier}</span>
               </td>
               <td>
-                <span className={`admin-status admin-status-${user.status}`}>
-                  {user.status}
-                </span>
+                <span className={`admin-status admin-status-${user.status}`}>{user.status}</span>
               </td>
               <td className="admin-actions">
                 {user.status === 'active' && (

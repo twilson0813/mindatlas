@@ -47,10 +47,10 @@ export function isAccountLocked(user: LockableUser): boolean {
  */
 export async function lockAccount(userId: string): Promise<void> {
   const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
-  await queryOne(
-    `UPDATE users SET is_locked = true, locked_until = $1 WHERE id = $2`,
-    [lockUntil, userId]
-  );
+  await queryOne(`UPDATE users SET is_locked = true, locked_until = $1 WHERE id = $2`, [
+    lockUntil,
+    userId,
+  ]);
 }
 
 /**
@@ -60,7 +60,7 @@ export async function lockAccount(userId: string): Promise<void> {
 export async function unlockAccount(userId: string): Promise<void> {
   await queryOne(
     `UPDATE users SET is_locked = false, locked_until = NULL, failed_attempts = 0 WHERE id = $1`,
-    [userId]
+    [userId],
   );
 }
 
@@ -69,10 +69,7 @@ export async function unlockAccount(userId: string): Promise<void> {
  * Called after a successful login.
  */
 export async function resetFailedAttempts(userId: string): Promise<void> {
-  await queryOne(
-    `UPDATE users SET failed_attempts = 0 WHERE id = $1`,
-    [userId]
-  );
+  await queryOne(`UPDATE users SET failed_attempts = 0 WHERE id = $1`, [userId]);
 }
 
 /**
@@ -82,7 +79,10 @@ export async function resetFailedAttempts(userId: string): Promise<void> {
  *
  * Returns true if the account was locked as a result of this failure.
  */
-export async function recordFailedAttempt(userId: string, currentFailedAttempts: number): Promise<boolean> {
+export async function recordFailedAttempt(
+  userId: string,
+  currentFailedAttempts: number,
+): Promise<boolean> {
   const newAttempts = currentFailedAttempts + 1;
 
   if (newAttempts >= MAX_FAILED_ATTEMPTS) {
@@ -90,15 +90,12 @@ export async function recordFailedAttempt(userId: string, currentFailedAttempts:
     const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
     await queryOne(
       `UPDATE users SET failed_attempts = $1, is_locked = true, locked_until = $2 WHERE id = $3`,
-      [newAttempts, lockUntil, userId]
+      [newAttempts, lockUntil, userId],
     );
     return true;
   }
 
   // Just increment the counter
-  await queryOne(
-    `UPDATE users SET failed_attempts = $1 WHERE id = $2`,
-    [newAttempts, userId]
-  );
+  await queryOne(`UPDATE users SET failed_attempts = $1 WHERE id = $2`, [newAttempts, userId]);
   return false;
 }

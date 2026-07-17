@@ -70,7 +70,9 @@ describe('Admin Auth Middleware - requireAdmin', () => {
     });
 
     it('should return 401 when req.user.sub is missing', async () => {
-      const req = createMockRequest({ user: { sub: '', email: '', role: '', iat: 0, exp: 0 } }) as Request;
+      const req = createMockRequest({
+        user: { sub: '', email: '', role: '', iat: 0, exp: 0 },
+      }) as Request;
       const res = createMockResponse() as Response;
 
       await requireAdmin(req, res, mockNext);
@@ -263,7 +265,9 @@ describe('Admin Auth Middleware - requirePermission', () => {
     requirePermission('users.delete')(req, res, mockNext);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ error: "Forbidden: Missing permission 'users.delete'" });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Forbidden: Missing permission 'users.delete'",
+    });
     expect(mockNext).not.toHaveBeenCalled();
   });
 

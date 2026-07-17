@@ -43,7 +43,12 @@ vi.mock('../../logger.js', () => ({
   }),
 }));
 
-import { getUserIntegration, setUserIntegration, deleteUserIntegration, getPlatformCredentials } from '../credentials/index.js';
+import {
+  getUserIntegration,
+  setUserIntegration,
+  deleteUserIntegration,
+  getPlatformCredentials,
+} from '../credentials/index.js';
 import { createItem, getItem } from '../items/index.js';
 import {
   connectNotion,
@@ -137,7 +142,7 @@ describe('Notion Integration Service', () => {
             'Content-Type': 'application/json',
             'Notion-Version': '2022-06-28',
           }),
-        })
+        }),
       );
 
       // Verify setUserIntegration was called with correct params
@@ -145,7 +150,7 @@ describe('Notion Integration Service', () => {
         'user-1',
         'notion',
         { accessToken: 'ntn_test_token_123' },
-        { workspace_id: 'ws-123', workspace_name: 'Test Workspace' }
+        { workspace_id: 'ws-123', workspace_name: 'Test Workspace' },
       );
 
       // Verify response
@@ -171,7 +176,7 @@ describe('Notion Integration Service', () => {
 
     it('should throw 503 when Notion OAuth is not configured', async () => {
       (getPlatformCredentials as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Platform credentials not configured for provider: notion_oauth')
+        new Error('Platform credentials not configured for provider: notion_oauth'),
       );
 
       await expect(connectNotion('user-1', 'some_code')).rejects.toMatchObject({
@@ -259,12 +264,15 @@ describe('Notion Integration Service', () => {
       expect(result.items_imported).toBe(1);
       expect(result.items).toHaveLength(1);
       expect(result.items[0].title).toBe('Test Page');
-      expect(createItem).toHaveBeenCalledWith('user-1', expect.objectContaining({
-        content: 'Hello from Notion',
-        content_type: 'note',
-        title: 'Test Page',
-        source_channel: 'notion',
-      }));
+      expect(createItem).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({
+          content: 'Hello from Notion',
+          content_type: 'note',
+          title: 'Test Page',
+          source_channel: 'notion',
+        }),
+      );
     });
 
     it('should continue importing other pages when one fails', async () => {
@@ -275,24 +283,21 @@ describe('Notion Integration Service', () => {
       });
 
       // First page fails
-      mockPagesRetrieve
-        .mockRejectedValueOnce(new Error('Not found'))
-        .mockResolvedValueOnce({
-          id: 'page-2',
-          properties: {
-            Name: { type: 'title', title: [{ plain_text: 'Page 2' }] },
-          },
-        });
+      mockPagesRetrieve.mockRejectedValueOnce(new Error('Not found')).mockResolvedValueOnce({
+        id: 'page-2',
+        properties: {
+          Name: { type: 'title', title: [{ plain_text: 'Page 2' }] },
+        },
+      });
 
-      mockBlocksChildrenList
-        .mockResolvedValueOnce({
-          results: [
-            {
-              type: 'paragraph',
-              paragraph: { rich_text: [{ plain_text: 'Content 2' }] },
-            },
-          ],
-        });
+      mockBlocksChildrenList.mockResolvedValueOnce({
+        results: [
+          {
+            type: 'paragraph',
+            paragraph: { rich_text: [{ plain_text: 'Content 2' }] },
+          },
+        ],
+      });
 
       const mockItem = {
         id: 'item-2',
@@ -385,7 +390,11 @@ describe('Notion Integration Service', () => {
     it('should return connection when it exists', async () => {
       (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         credentials: { accessToken: 'token123' },
-        metadata: { workspace_id: 'ws-1', workspace_name: 'My Workspace', connected_at: '2024-06-01T00:00:00.000Z' },
+        metadata: {
+          workspace_id: 'ws-1',
+          workspace_name: 'My Workspace',
+          connected_at: '2024-06-01T00:00:00.000Z',
+        },
       });
 
       const result = await getConnection('user-1');

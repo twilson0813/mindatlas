@@ -31,11 +31,13 @@ describe('Property 18: Input Sanitization', () => {
 
     const xssPayloadArb = fc.constantFrom(...xssPayloads);
 
-    const stringWithXssArb = fc.tuple(
-      fc.string({ minLength: 0, maxLength: 100 }),
-      xssPayloadArb,
-      fc.string({ minLength: 0, maxLength: 100 }),
-    ).map(([prefix, payload, suffix]) => prefix + payload + suffix);
+    const stringWithXssArb = fc
+      .tuple(
+        fc.string({ minLength: 0, maxLength: 100 }),
+        xssPayloadArb,
+        fc.string({ minLength: 0, maxLength: 100 }),
+      )
+      .map(([prefix, payload, suffix]) => prefix + payload + suffix);
 
     it('output never contains <script (case-insensitive)', () => {
       fc.assert(
@@ -101,21 +103,23 @@ describe('Property 18: Input Sanitization', () => {
       "' OR '1'='1",
       "' UNION SELECT * FROM passwords --",
       "admin'--",
-      "1; DELETE FROM items;",
+      '1; DELETE FROM items;',
       "' OR 1=1; --",
       "\\'; DROP TABLE--",
-      "value\x00injection",
-      "data\x1aescape",
-      "line1\nline2\rline3",
+      'value\x00injection',
+      'data\x1aescape',
+      'line1\nline2\rline3',
     ];
 
     const sqlPayloadArb = fc.constantFrom(...sqlPayloads);
 
-    const stringWithSqlArb = fc.tuple(
-      fc.string({ minLength: 0, maxLength: 50 }),
-      sqlPayloadArb,
-      fc.string({ minLength: 0, maxLength: 50 }),
-    ).map(([prefix, payload, suffix]) => prefix + payload + suffix);
+    const stringWithSqlArb = fc
+      .tuple(
+        fc.string({ minLength: 0, maxLength: 50 }),
+        sqlPayloadArb,
+        fc.string({ minLength: 0, maxLength: 50 }),
+      )
+      .map(([prefix, payload, suffix]) => prefix + payload + suffix);
 
     it('all single quotes are doubled in output', () => {
       fc.assert(
@@ -154,9 +158,7 @@ describe('Property 18: Input Sanitization', () => {
     it('handles arbitrary strings with special characters', () => {
       // Use stringOf with characters that include SQL-relevant chars
       const sqlCharSet = fc.stringOf(
-        fc.constantFrom(
-          ...[..."abcdefghijklmnopqrstuvwxyz0123456789 '\"\\;\x00\x1a\n\r-/"],
-        ),
+        fc.constantFrom(...[...'abcdefghijklmnopqrstuvwxyz0123456789 \'"\\;\x00\x1a\n\r-/']),
         { minLength: 0, maxLength: 200 },
       );
 

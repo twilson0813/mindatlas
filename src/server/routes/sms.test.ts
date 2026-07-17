@@ -40,14 +40,11 @@ describe('POST /api/sms/incoming', () => {
   });
 
   it('should process incoming SMS from Twilio form-encoded payload', async () => {
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .type('form')
-      .send({
-        From: '+14155551234',
-        Body: 'Hello MindAtlas!',
-        MessageSid: 'SM_abc123',
-      });
+    const response = await request(app).post('/api/sms/incoming').type('form').send({
+      From: '+14155551234',
+      Body: 'Hello MindAtlas!',
+      MessageSid: 'SM_abc123',
+    });
 
     expect(response.status).toBe(200);
     expect(response.type).toBe('text/xml');
@@ -56,25 +53,20 @@ describe('POST /api/sms/incoming', () => {
   });
 
   it('should accept JSON-encoded payload too', async () => {
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .send({
-        From: '+14155551234',
-        Body: 'JSON message',
-        MessageSid: 'SM_def456',
-      });
+    const response = await request(app).post('/api/sms/incoming').send({
+      From: '+14155551234',
+      Body: 'JSON message',
+      MessageSid: 'SM_def456',
+    });
 
     expect(response.status).toBe(200);
     expect(mockHandleIncoming).toHaveBeenCalledWith('+14155551234', 'JSON message');
   });
 
   it('should return 400 when From is missing', async () => {
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .type('form')
-      .send({
-        Body: 'No sender',
-      });
+    const response = await request(app).post('/api/sms/incoming').type('form').send({
+      Body: 'No sender',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain('Missing required fields');
@@ -82,12 +74,9 @@ describe('POST /api/sms/incoming', () => {
   });
 
   it('should return 400 when Body is missing', async () => {
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .type('form')
-      .send({
-        From: '+14155551234',
-      });
+    const response = await request(app).post('/api/sms/incoming').type('form').send({
+      From: '+14155551234',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain('Missing required fields');
@@ -97,14 +86,11 @@ describe('POST /api/sms/incoming', () => {
   it('should return 200 with TwiML even when processing throws', async () => {
     mockHandleIncoming.mockRejectedValue(new Error('Unexpected crash'));
 
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .type('form')
-      .send({
-        From: '+14155551234',
-        Body: 'This will fail',
-        MessageSid: 'SM_fail_123',
-      });
+    const response = await request(app).post('/api/sms/incoming').type('form').send({
+      From: '+14155551234',
+      Body: 'This will fail',
+      MessageSid: 'SM_fail_123',
+    });
 
     // Twilio expects 200 even on errors to avoid their retry mechanism
     expect(response.status).toBe(200);
@@ -113,13 +99,10 @@ describe('POST /api/sms/incoming', () => {
   });
 
   it('should handle empty body values as missing', async () => {
-    const response = await request(app)
-      .post('/api/sms/incoming')
-      .type('form')
-      .send({
-        From: '',
-        Body: 'test',
-      });
+    const response = await request(app).post('/api/sms/incoming').type('form').send({
+      From: '',
+      Body: 'test',
+    });
 
     expect(response.status).toBe(400);
     expect(mockHandleIncoming).not.toHaveBeenCalled();

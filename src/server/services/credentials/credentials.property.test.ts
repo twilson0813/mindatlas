@@ -116,7 +116,7 @@ describe('Property 6: Cache invalidation on credential update', () => {
             ([a, b]) =>
               a.accountSid !== b.accountSid ||
               a.authToken !== b.authToken ||
-              a.phoneNumber !== b.phoneNumber
+              a.phoneNumber !== b.phoneNumber,
           )
           .map(([a, b]) => ({ provider, credsA: a, credsB: b }));
       case 'stripe':
@@ -152,7 +152,6 @@ describe('Property 6: Cache invalidation on credential update', () => {
     );
   });
 });
-
 
 /**
  * Property 3: User integration uniqueness per provider
@@ -256,16 +255,13 @@ describe('Property 3: User integration uniqueness per provider', () => {
         // Step 4: Assert stored value corresponds to credsB (the latest write)
         const stored = dbStore.get(compositeKey);
         expect(stored).toBeDefined();
-        const decryptedValue = JSON.parse(
-          stored!.credentials_encrypted.replace('encrypted:', '')
-        );
+        const decryptedValue = JSON.parse(stored!.credentials_encrypted.replace('encrypted:', ''));
         expect(decryptedValue).toEqual(credsB);
       }),
       { numRuns: 100 },
     );
   });
 });
-
 
 /**
  * Property 4: Missing platform provider error
@@ -346,7 +342,6 @@ describe('Property 5: Missing user integration returns null', () => {
     );
   });
 });
-
 
 /**
  * Property 2: Platform provider uniqueness
@@ -446,9 +441,7 @@ describe('Property 2: Platform provider uniqueness', () => {
         await setPlatformCredentials(provider as any, credsB as any);
 
         // Assert: DB store has exactly 1 entry for this provider (not 2)
-        const entriesForProvider = [...dbStore.values()].filter(
-          (row) => row.provider === provider
-        );
+        const entriesForProvider = [...dbStore.values()].filter((row) => row.provider === provider);
         expect(entriesForProvider).toHaveLength(1);
 
         // Assert: The stored value corresponds to credsB (the latest)
@@ -459,8 +452,6 @@ describe('Property 2: Platform provider uniqueness', () => {
     );
   });
 });
-
-
 
 /**
  * Property 10: Extensible provider storage
@@ -537,7 +528,12 @@ describe('Property 10: Extensible provider storage', () => {
       // Ensure no trailing/leading hyphens and length 1-50
       return name.replace(/-+$/, '').replace(/^-+/, '');
     })
-    .filter((name) => name.length >= 1 && name.length <= 50 && /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name));
+    .filter(
+      (name) =>
+        name.length >= 1 &&
+        name.length <= 50 &&
+        /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name),
+    );
 
   // Generator for UUID-like user IDs
   const userIdArb = fc.uuid();

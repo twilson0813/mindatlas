@@ -68,7 +68,12 @@ export async function processAiJob(job: Job<AiJobData>): Promise<AiJobResult> {
     const message = err instanceof Error ? err.message : 'Unknown error';
     log.error({ jobId: job.id, itemId, error: message }, 'Failed to fetch item for AI processing');
     // Item not found or access denied — no point retrying
-    return { itemId, categorized: false, relationshipsMapped: false, error: `Item fetch failed: ${message}` };
+    return {
+      itemId,
+      categorized: false,
+      relationshipsMapped: false,
+      error: `Item fetch failed: ${message}`,
+    };
   }
 
   let categorized = false;
@@ -83,11 +88,22 @@ export async function processAiJob(job: Job<AiJobData>): Promise<AiJobResult> {
       throw new Error(categoryResult.error);
     }
     categorized = true;
-    log.info({ jobId: job.id, itemId, categories: categoryResult.categories.length, tags: categoryResult.tags.length }, 'Categorization complete');
+    log.info(
+      {
+        jobId: job.id,
+        itemId,
+        categories: categoryResult.categories.length,
+        tags: categoryResult.tags.length,
+      },
+      'Categorization complete',
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown AI error';
     lastError = message;
-    log.warn({ jobId: job.id, itemId, error: message, attempt: job.attemptsMade + 1 }, 'AI categorization failed — will retry if attempts remain');
+    log.warn(
+      { jobId: job.id, itemId, error: message, attempt: job.attemptsMade + 1 },
+      'AI categorization failed — will retry if attempts remain',
+    );
     // Throw to trigger BullMQ retry with exponential backoff
     throw new Error(`AI categorization failed: ${message}`);
   }
@@ -101,11 +117,17 @@ export async function processAiJob(job: Job<AiJobData>): Promise<AiJobResult> {
 
     const relationships = await mapRelationships(item, existingItems);
     relationshipsMapped = relationships.length >= 0; // even 0 relationships is a valid result
-    log.info({ jobId: job.id, itemId, relationships: relationships.length }, 'Relationship mapping complete');
+    log.info(
+      { jobId: job.id, itemId, relationships: relationships.length },
+      'Relationship mapping complete',
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     lastError = message;
-    log.warn({ jobId: job.id, itemId, error: message }, 'Relationship mapping failed — item still stored (graceful degradation)');
+    log.warn(
+      { jobId: job.id, itemId, error: message },
+      'Relationship mapping failed — item still stored (graceful degradation)',
+    );
     // Relationship mapping failure is non-critical: items is already categorized
     // We log and continue rather than throwing (graceful degradation)
   }
@@ -139,24 +161,23 @@ export function startAiWorker(): Worker<AiJobData, AiJobResult> {
     return aiWorker;
   }
 
-  aiWorker = new Worker<AiJobData, AiJobResult>(
-    QUEUE_NAMES.AI_PROCESSING,
-    processAiJob,
-    {
-      connection: getWorkerConnection(),
-      concurrency: 5,
-      limiter: {
-        max: 10,
-        duration: 60000, // Rate limit: max 10 jobs per minute to avoid API rate limits
-      },
-    }
-  );
+  aiWorker = new Worker<AiJobData, AiJobResult>(QUEUE_NAMES.AI_PROCESSING, processAiJob, {
+    connection: getWorkerConnection(),
+    concurrency: 5,
+    limiter: {
+      max: 10,
+      duration: 60000, // Rate limit: max 10 jobs per minute to avoid API rate limits
+    },
+  });
 
   // ─── Event Handlers ──────────────────────────────────────────────────────
 
   aiWorker.on('completed', (job: Job<AiJobData, AiJobResult> | undefined) => {
     if (job) {
-      log.info({ jobId: job.id, itemId: job.data.itemId, result: job.returnvalue }, 'AI job completed');
+      log.info(
+        { jobId: job.id, itemId: job.data.itemId, result: job.returnvalue },
+        'AI job completed',
+      );
     }
   });
 
@@ -174,7 +195,7 @@ export function startAiWorker(): Worker<AiJobData, AiJobResult> {
         },
         isMaxRetriesExceeded
           ? 'AI job moved to dead letter queue (max retries exceeded)'
-          : 'AI job failed — will retry'
+          : 'AI job failed — will retry',
       );
     }
   });

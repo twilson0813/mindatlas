@@ -48,7 +48,7 @@ stripeWebhookRouter.post(
       }
       res.status(500).json({ error: 'Webhook processing failed' });
     }
-  }
+  },
 );
 
 // Apply auth and rate limiter to all billing routes
@@ -63,26 +63,25 @@ router.use(rateLimiter);
  *
  * Requirements: 18.9
  */
-router.get(
-  '/subscription',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const subscription = await getUserSubscription(userId);
+router.get('/subscription', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const subscription = await getUserSubscription(userId);
 
-      if (!subscription) {
-        res.status(200).json({ plan: 'free', status: 'active', message: 'No active paid subscription' });
-        return;
-      }
-
-      res.json(subscription);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
+    if (!subscription) {
+      res
+        .status(200)
+        .json({ plan: 'free', status: 'active', message: 'No active paid subscription' });
+      return;
     }
+
+    res.json(subscription);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * POST /api/billing/subscribe
@@ -98,27 +97,24 @@ router.get(
  *   "paymentMethodId": "string (required)"
  * }
  */
-router.post(
-  '/subscribe',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const { planId, paymentMethodId } = req.body;
+router.post('/subscribe', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const { planId, paymentMethodId } = req.body;
 
-      if (!planId || !paymentMethodId) {
-        res.status(400).json({ error: 'planId and paymentMethodId are required' });
-        return;
-      }
-
-      const subscription = await subscribeToPlan(userId, planId, paymentMethodId);
-      res.status(201).json(subscription);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
+    if (!planId || !paymentMethodId) {
+      res.status(400).json({ error: 'planId and paymentMethodId are required' });
+      return;
     }
+
+    const subscription = await subscribeToPlan(userId, planId, paymentMethodId);
+    res.status(201).json(subscription);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * POST /api/billing/upgrade
@@ -132,27 +128,24 @@ router.post(
  *   "planId": "string (required)"
  * }
  */
-router.post(
-  '/upgrade',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const { planId } = req.body;
+router.post('/upgrade', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const { planId } = req.body;
 
-      if (!planId) {
-        res.status(400).json({ error: 'planId is required' });
-        return;
-      }
-
-      const subscription = await upgradePlan(userId, planId);
-      res.json(subscription);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
+    if (!planId) {
+      res.status(400).json({ error: 'planId is required' });
+      return;
     }
+
+    const subscription = await upgradePlan(userId, planId);
+    res.json(subscription);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * POST /api/billing/downgrade
@@ -167,27 +160,24 @@ router.post(
  *   "planId": "string (required)"
  * }
  */
-router.post(
-  '/downgrade',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const { planId } = req.body;
+router.post('/downgrade', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const { planId } = req.body;
 
-      if (!planId) {
-        res.status(400).json({ error: 'planId is required' });
-        return;
-      }
-
-      const subscription = await downgradePlan(userId, planId);
-      res.json(subscription);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
+    if (!planId) {
+      res.status(400).json({ error: 'planId is required' });
+      return;
     }
+
+    const subscription = await downgradePlan(userId, planId);
+    res.json(subscription);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * POST /api/billing/cancel
@@ -197,20 +187,17 @@ router.post(
  *
  * Requirements: 18.8
  */
-router.post(
-  '/cancel',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      await cancelSubscription(userId);
-      res.json({ message: 'Subscription cancelled. Access maintained until end of billing period.' });
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
-    }
+router.post('/cancel', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    await cancelSubscription(userId);
+    res.json({ message: 'Subscription cancelled. Access maintained until end of billing period.' });
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * GET /api/billing/history
@@ -219,20 +206,17 @@ router.post(
  *
  * Requirements: 18.9
  */
-router.get(
-  '/history',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const history = await getBillingHistory(userId);
-      res.json(history);
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
-    }
+router.get('/history', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const history = await getBillingHistory(userId);
+    res.json(history);
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * PUT /api/billing/payment-method
@@ -246,27 +230,24 @@ router.get(
  *   "paymentMethodId": "string (required)"
  * }
  */
-router.put(
-  '/payment-method',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
-      const { paymentMethodId } = req.body;
+router.put('/payment-method', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
+    const { paymentMethodId } = req.body;
 
-      if (!paymentMethodId) {
-        res.status(400).json({ error: 'paymentMethodId is required' });
-        return;
-      }
-
-      await updatePaymentMethod(userId, paymentMethodId);
-      res.json({ message: 'Payment method updated successfully' });
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
+    if (!paymentMethodId) {
+      res.status(400).json({ error: 'paymentMethodId is required' });
+      return;
     }
+
+    await updatePaymentMethod(userId, paymentMethodId);
+    res.json({ message: 'Payment method updated successfully' });
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 /**
  * GET /api/billing/usage
@@ -275,35 +256,32 @@ router.put(
  *
  * Requirements: 18.9
  */
-router.get(
-  '/usage',
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.sub;
+router.get('/usage', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.sub;
 
-      const [storage, aiQueries] = await Promise.all([
-        checkStorageLimit(userId),
-        checkAiQueryLimit(userId),
-      ]);
+    const [storage, aiQueries] = await Promise.all([
+      checkStorageLimit(userId),
+      checkAiQueryLimit(userId),
+    ]);
 
-      res.json({
-        storage: {
-          usedMb: storage.usedMb,
-          limitMb: storage.limitMb,
-          remainingMb: storage.remainingMb,
-        },
-        aiQueries: {
-          usedToday: aiQueries.usedToday,
-          dailyLimit: aiQueries.dailyLimit,
-          remaining: aiQueries.remaining,
-        },
-      });
-    } catch (error: unknown) {
-      const err = error as Error & { statusCode?: number };
-      const statusCode = err.statusCode || 500;
-      res.status(statusCode).json({ error: err.message });
-    }
+    res.json({
+      storage: {
+        usedMb: storage.usedMb,
+        limitMb: storage.limitMb,
+        remainingMb: storage.remainingMb,
+      },
+      aiQueries: {
+        usedToday: aiQueries.usedToday,
+        dailyLimit: aiQueries.dailyLimit,
+        remaining: aiQueries.remaining,
+      },
+    });
+  } catch (error: unknown) {
+    const err = error as Error & { statusCode?: number };
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).json({ error: err.message });
   }
-);
+});
 
 export default router;

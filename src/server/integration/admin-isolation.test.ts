@@ -81,7 +81,7 @@ function assertNoContentFields(value: unknown, path = ''): void {
     for (const field of FORBIDDEN_CONTENT_FIELDS) {
       expect(obj).not.toHaveProperty(
         field,
-        `Found forbidden field "${field}" at ${path || 'root'}`
+        `Found forbidden field "${field}" at ${path || 'root'}`,
       );
     }
     for (const [key, val] of Object.entries(obj)) {
@@ -194,10 +194,20 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
         assertNoContentFields(user);
         // Ensure no unexpected keys beyond the defined interface
         const allowedKeys = [
-          'userId', 'email', 'role', 'isLocked', 'lockedUntil',
-          'registrationDate', 'updatedAt', 'subscriptionId', 'planName',
-          'planDisplayName', 'subscriptionStatus', 'currentPeriodEnd',
-          'cardCount', 'totalStorageUsedBytes',
+          'userId',
+          'email',
+          'role',
+          'isLocked',
+          'lockedUntil',
+          'registrationDate',
+          'updatedAt',
+          'subscriptionId',
+          'planName',
+          'planDisplayName',
+          'subscriptionStatus',
+          'currentPeriodEnd',
+          'cardCount',
+          'totalStorageUsedBytes',
         ];
         for (const key of Object.keys(user)) {
           expect(allowedKeys).toContain(key);
@@ -211,15 +221,15 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
   describe('getSystemMetrics returns no content leaks', () => {
     it('should return only aggregate counts with no user content', async () => {
       mockQueryOne
-        .mockResolvedValueOnce({ count: 500 })   // totalUsers
-        .mockResolvedValueOnce({ count: 100 })   // activeDaily
-        .mockResolvedValueOnce({ count: 250 })   // activeWeekly
-        .mockResolvedValueOnce({ count: 400 })   // activeMonthly
+        .mockResolvedValueOnce({ count: 500 }) // totalUsers
+        .mockResolvedValueOnce({ count: 100 }) // activeDaily
+        .mockResolvedValueOnce({ count: 250 }) // activeWeekly
+        .mockResolvedValueOnce({ count: 400 }) // activeMonthly
         .mockResolvedValueOnce({ count: 12000 }) // totalCards
-        .mockResolvedValueOnce({ count: 850 })   // apiVolume24h
-        .mockResolvedValueOnce({ count: 5500 })  // apiVolume7d
-        .mockResolvedValueOnce({ count: 7 })     // errors24h
-        .mockResolvedValueOnce({ count: 42 });   // errors7d
+        .mockResolvedValueOnce({ count: 850 }) // apiVolume24h
+        .mockResolvedValueOnce({ count: 5500 }) // apiVolume7d
+        .mockResolvedValueOnce({ count: 7 }) // errors24h
+        .mockResolvedValueOnce({ count: 42 }); // errors7d
 
       const metrics = await getSystemMetrics();
 
@@ -266,41 +276,37 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       'SELECT card_count, total_storage_used_bytes FROM admin_user_summary WHERE user_id = $1',
     ];
 
-    it.each(validAdminQueries)(
-      'should accept safe admin query: %s',
-      (sql) => {
-        expect(() => AdminDataAccess.validateQuerySafety(sql)).not.toThrow();
-      }
-    );
+    it.each(validAdminQueries)('should accept safe admin query: %s', (sql) => {
+      expect(() => AdminDataAccess.validateQuerySafety(sql)).not.toThrow();
+    });
 
     const dangerousQueries = [
       { sql: 'SELECT content_encrypted FROM items WHERE user_id = $1', field: 'content_encrypted' },
       { sql: 'SELECT id, file_path FROM items', field: 'file_path' },
       { sql: 'SELECT id, content FROM items WHERE id = $1', field: 'content' },
       { sql: 'SELECT file_data FROM items', field: 'file_data' },
-      { sql: 'SELECT u.email, i.content_encrypted FROM users u JOIN items i ON u.id = i.user_id', field: 'content_encrypted' },
+      {
+        sql: 'SELECT u.email, i.content_encrypted FROM users u JOIN items i ON u.id = i.user_id',
+        field: 'content_encrypted',
+      },
       { sql: 'UPDATE items SET content_encrypted = $1 WHERE id = $2', field: 'content_encrypted' },
-      { sql: 'INSERT INTO temp_export (file_path) SELECT file_path FROM items', field: 'file_path' },
+      {
+        sql: 'INSERT INTO temp_export (file_path) SELECT file_path FROM items',
+        field: 'file_path',
+      },
       { sql: 'SELECT CONTENT_ENCRYPTED FROM items', field: 'content_encrypted' },
       { sql: 'SELECT File_Path FROM items WHERE user_id = $1', field: 'file_path' },
     ];
 
-    it.each(dangerousQueries)(
-      'should reject query accessing "$field": $sql',
-      ({ sql }) => {
-        expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(
-          ContentAccessViolationError
-        );
-      }
-    );
+    it.each(dangerousQueries)('should reject query accessing "$field": $sql', ({ sql }) => {
+      expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(ContentAccessViolationError);
+    });
 
     it('should not be confused by similar but safe field names', () => {
       // "card_count" contains "content" as substring but should NOT be rejected
       // because validateQuerySafety uses word boundaries
       expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT card_count FROM admin_user_summary'
-        )
+        AdminDataAccess.validateQuerySafety('SELECT card_count FROM admin_user_summary'),
       ).not.toThrow();
 
       // "content_type" contains "content" as a prefix but should NOT match
@@ -310,9 +316,7 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       // The regex is \bcontent\b — "content_type" has "content" followed by "_",
       // which is a word character, so \b won't match after "content" in "content_type".
       expect(() =>
-        AdminDataAccess.validateQuerySafety(
-          'SELECT content_type FROM items WHERE user_id = $1'
-        )
+        AdminDataAccess.validateQuerySafety('SELECT content_type FROM items WHERE user_id = $1'),
       ).not.toThrow();
     });
   });
@@ -481,11 +485,10 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
 
   describe('Queries attempting content access throw ContentAccessViolationError', () => {
     it('should throw when attempting to SELECT content_encrypted', () => {
-      const maliciousQuery =
-        'SELECT id, email, content_encrypted FROM items WHERE user_id = $1';
+      const maliciousQuery = 'SELECT id, email, content_encrypted FROM items WHERE user_id = $1';
 
       expect(() => AdminDataAccess.validateQuerySafety(maliciousQuery)).toThrow(
-        ContentAccessViolationError
+        ContentAccessViolationError,
       );
     });
 
@@ -498,7 +501,7 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       `;
 
       expect(() => AdminDataAccess.validateQuerySafety(maliciousQuery)).toThrow(
-        ContentAccessViolationError
+        ContentAccessViolationError,
       );
     });
 
@@ -509,16 +512,15 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       `;
 
       expect(() => AdminDataAccess.validateQuerySafety(maliciousQuery)).toThrow(
-        ContentAccessViolationError
+        ContentAccessViolationError,
       );
     });
 
     it('should throw when attempting to access content through wildcard-like patterns with content field', () => {
-      const maliciousQuery =
-        'SELECT id, user_id, content, created_at FROM items';
+      const maliciousQuery = 'SELECT id, user_id, content, created_at FROM items';
 
       expect(() => AdminDataAccess.validateQuerySafety(maliciousQuery)).toThrow(
-        ContentAccessViolationError
+        ContentAccessViolationError,
       );
     });
 
@@ -529,24 +531,18 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       `;
 
       expect(() => AdminDataAccess.validateQuerySafety(maliciousQuery)).toThrow(
-        ContentAccessViolationError
+        ContentAccessViolationError,
       );
     });
 
     it('thrown error should contain the offending field name', () => {
       try {
-        AdminDataAccess.validateQuerySafety(
-          'SELECT content_encrypted FROM items'
-        );
+        AdminDataAccess.validateQuerySafety('SELECT content_encrypted FROM items');
         expect.fail('Should have thrown');
       } catch (e) {
         expect(e).toBeInstanceOf(ContentAccessViolationError);
-        expect((e as ContentAccessViolationError).field).toBe(
-          'content_encrypted'
-        );
-        expect((e as ContentAccessViolationError).message).toContain(
-          'content_encrypted'
-        );
+        expect((e as ContentAccessViolationError).field).toBe('content_encrypted');
+        expect((e as ContentAccessViolationError).message).toContain('content_encrypted');
       }
     });
 
@@ -556,9 +552,7 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
         expect.fail('Should have thrown');
       } catch (e) {
         expect(e).toBeInstanceOf(ContentAccessViolationError);
-        expect((e as ContentAccessViolationError).name).toBe(
-          'ContentAccessViolationError'
-        );
+        expect((e as ContentAccessViolationError).name).toBe('ContentAccessViolationError');
         expect((e as ContentAccessViolationError).field).toBe('file_path');
       }
     });
@@ -573,9 +567,7 @@ describe('Integration: Admin Content Isolation End-to-End', () => {
       ];
 
       for (const sql of variations) {
-        expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(
-          ContentAccessViolationError
-        );
+        expect(() => AdminDataAccess.validateQuerySafety(sql)).toThrow(ContentAccessViolationError);
       }
     });
   });

@@ -39,7 +39,20 @@ vi.mock('../logger.js', () => ({
 vi.mock('../redis.js', () => ({
   redis: {
     multi: () => ({
-      zremrangebyscore: () => ({ zcard: () => ({ zadd: () => ({ expire: () => ({ exec: vi.fn().mockResolvedValue([[null, 0], [null, 0], [null, 1], [null, true]]) }) }) }) }),
+      zremrangebyscore: () => ({
+        zcard: () => ({
+          zadd: () => ({
+            expire: () => ({
+              exec: vi.fn().mockResolvedValue([
+                [null, 0],
+                [null, 0],
+                [null, 1],
+                [null, true],
+              ]),
+            }),
+          }),
+        }),
+      }),
     }),
     zcard: vi.fn().mockResolvedValue(0),
   },
@@ -79,11 +92,9 @@ const TEST_JWT_SECRET = 'dev-jwt-secret';
 const TEST_USER_ID = 'user-123';
 
 function generateTestToken(userId = TEST_USER_ID): string {
-  return jwt.sign(
-    { sub: userId, email: 'test@example.com', role: 'user' },
-    TEST_JWT_SECRET,
-    { expiresIn: '15m' }
-  );
+  return jwt.sign({ sub: userId, email: 'test@example.com', role: 'user' }, TEST_JWT_SECRET, {
+    expiresIn: '15m',
+  });
 }
 
 function createTestApp() {
@@ -199,7 +210,7 @@ describe('Billing API Routes', () => {
 
     it('should return 500 when user already has active subscription', async () => {
       mockSubscribeToPlan.mockRejectedValue(
-        new Error('User already has an active subscription. Use upgradePlan or downgradePlan.')
+        new Error('User already has an active subscription. Use upgradePlan or downgradePlan.'),
       );
 
       const response = await request(app)

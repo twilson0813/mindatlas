@@ -36,10 +36,11 @@ router.post('/mfa/setup', authenticateToken, async (req: Request, res: Response)
 
   try {
     // Check the user is an admin
-    const adminUser = await queryOne<{ id: string; mfa_enabled: boolean; mfa_secret: string | null }>(
-      'SELECT id, mfa_enabled, mfa_secret FROM admin_users WHERE user_id = $1',
-      [userId]
-    );
+    const adminUser = await queryOne<{
+      id: string;
+      mfa_enabled: boolean;
+      mfa_secret: string | null;
+    }>('SELECT id, mfa_enabled, mfa_secret FROM admin_users WHERE user_id = $1', [userId]);
 
     if (!adminUser) {
       res.status(403).json({ error: 'Forbidden: Admin access required' });
@@ -56,17 +57,15 @@ router.post('/mfa/setup', authenticateToken, async (req: Request, res: Response)
     const otpauthUrl = authenticator.keyuri(req.user.email, 'MindAtlas Admin', secret);
 
     // Store the secret (not yet enabled until verified)
-    await query(
-      'UPDATE admin_users SET mfa_secret = $1 WHERE id = $2',
-      [secret, adminUser.id]
-    );
+    await query('UPDATE admin_users SET mfa_secret = $1 WHERE id = $2', [secret, adminUser.id]);
 
     logger.info({ adminId: adminUser.id }, 'MFA setup initiated');
 
     res.status(200).json({
       secret,
       otpauthUrl,
-      message: 'Scan the QR code with your authenticator app, then verify with /api/admin/mfa/verify',
+      message:
+        'Scan the QR code with your authenticator app, then verify with /api/admin/mfa/verify',
     });
   } catch (error) {
     logger.error({ error, userId }, 'Error during MFA setup');
@@ -97,10 +96,11 @@ router.post('/mfa/verify', authenticateToken, async (req: Request, res: Response
   }
 
   try {
-    const adminUser = await queryOne<{ id: string; mfa_enabled: boolean; mfa_secret: string | null }>(
-      'SELECT id, mfa_enabled, mfa_secret FROM admin_users WHERE user_id = $1',
-      [userId]
-    );
+    const adminUser = await queryOne<{
+      id: string;
+      mfa_enabled: boolean;
+      mfa_secret: string | null;
+    }>('SELECT id, mfa_enabled, mfa_secret FROM admin_users WHERE user_id = $1', [userId]);
 
     if (!adminUser) {
       res.status(403).json({ error: 'Forbidden: Admin access required' });
@@ -125,10 +125,7 @@ router.post('/mfa/verify', authenticateToken, async (req: Request, res: Response
     }
 
     // Enable MFA
-    await query(
-      'UPDATE admin_users SET mfa_enabled = true WHERE id = $1',
-      [adminUser.id]
-    );
+    await query('UPDATE admin_users SET mfa_enabled = true WHERE id = $1', [adminUser.id]);
 
     logger.info({ adminId: adminUser.id }, 'MFA enabled successfully');
 
@@ -201,63 +198,75 @@ router.get('/users/:id', requirePermission('users.read'), async (req: Request, r
  * Disables a user account.
  * Requirements: 17.2
  */
-router.post('/users/:id/disable', requirePermission('users.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
-  const { reason } = req.body;
+router.post(
+  '/users/:id/disable',
+  requirePermission('users.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string') {
-    res.status(400).json({ error: 'Reason is required' });
-    return;
-  }
+    if (!reason || typeof reason !== 'string') {
+      res.status(400).json({ error: 'Reason is required' });
+      return;
+    }
 
-  try {
-    await adminService.disableAccount(adminReq.adminUser.id, param(req, 'id'), reason);
-    res.status(200).json({ message: 'Account disabled successfully' });
-  } catch (error) {
-    logger.error({ error, userId: param(req, 'id') }, 'Error disabling account');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+    try {
+      await adminService.disableAccount(adminReq.adminUser.id, param(req, 'id'), reason);
+      res.status(200).json({ message: 'Account disabled successfully' });
+    } catch (error) {
+      logger.error({ error, userId: param(req, 'id') }, 'Error disabling account');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * POST /api/admin/users/:id/delete
  * Marks user account for deletion.
  * Requirements: 17.2
  */
-router.post('/users/:id/delete', requirePermission('users.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
-  const { reason } = req.body;
+router.post(
+  '/users/:id/delete',
+  requirePermission('users.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
+    const { reason } = req.body;
 
-  if (!reason || typeof reason !== 'string') {
-    res.status(400).json({ error: 'Reason is required' });
-    return;
-  }
+    if (!reason || typeof reason !== 'string') {
+      res.status(400).json({ error: 'Reason is required' });
+      return;
+    }
 
-  try {
-    await adminService.deleteAccount(adminReq.adminUser.id, param(req, 'id'), reason);
-    res.status(200).json({ message: 'Account marked for deletion' });
-  } catch (error) {
-    logger.error({ error, userId: param(req, 'id') }, 'Error deleting account');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+    try {
+      await adminService.deleteAccount(adminReq.adminUser.id, param(req, 'id'), reason);
+      res.status(200).json({ message: 'Account marked for deletion' });
+    } catch (error) {
+      logger.error({ error, userId: param(req, 'id') }, 'Error deleting account');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * POST /api/admin/users/:id/unlock
  * Unlocks a locked user account.
  * Requirements: 17.2
  */
-router.post('/users/:id/unlock', requirePermission('users.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
+router.post(
+  '/users/:id/unlock',
+  requirePermission('users.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
 
-  try {
-    await adminService.unlockAccount(adminReq.adminUser.id, param(req, 'id'));
-    res.status(200).json({ message: 'Account unlocked successfully' });
-  } catch (error) {
-    logger.error({ error, userId: param(req, 'id') }, 'Error unlocking account');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+    try {
+      await adminService.unlockAccount(adminReq.adminUser.id, param(req, 'id'));
+      res.status(200).json({ message: 'Account unlocked successfully' });
+    } catch (error) {
+      logger.error({ error, userId: param(req, 'id') }, 'Error unlocking account');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 // ─── System Metrics ──────────────────────────────────────────────────────────
 
@@ -281,15 +290,19 @@ router.get('/metrics', requirePermission('metrics.read'), async (_req: Request, 
  * Returns subscription-specific metrics.
  * Requirements: 17.5, 18.10
  */
-router.get('/metrics/subscriptions', requirePermission('metrics.read'), async (_req: Request, res: Response) => {
-  try {
-    const metrics = await adminService.getSubscriptionMetrics();
-    res.status(200).json(metrics);
-  } catch (error) {
-    logger.error({ error }, 'Error fetching subscription metrics');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+router.get(
+  '/metrics/subscriptions',
+  requirePermission('metrics.read'),
+  async (_req: Request, res: Response) => {
+    try {
+      const metrics = await adminService.getSubscriptionMetrics();
+      res.status(200).json(metrics);
+    } catch (error) {
+      logger.error({ error }, 'Error fetching subscription metrics');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 // ─── Plan Management ─────────────────────────────────────────────────────────
 
@@ -321,7 +334,11 @@ router.post('/plans', requirePermission('plans.write'), async (req: Request, res
     res.status(201).json(plan);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message.includes('required') || message.includes('must be') || message.includes('already exists')) {
+    if (
+      message.includes('required') ||
+      message.includes('must be') ||
+      message.includes('already exists')
+    ) {
       res.status(400).json({ error: message });
     } else {
       logger.error({ error }, 'Error creating plan');
@@ -345,7 +362,12 @@ router.put('/plans/:id', requirePermission('plans.write'), async (req: Request, 
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message === 'Plan not found') {
       res.status(404).json({ error: message });
-    } else if (message.includes('required') || message.includes('must be') || message.includes('cannot be') || message.includes('No changes')) {
+    } else if (
+      message.includes('required') ||
+      message.includes('must be') ||
+      message.includes('cannot be') ||
+      message.includes('No changes')
+    ) {
       res.status(400).json({ error: message });
     } else {
       logger.error({ error }, 'Error updating plan');
@@ -359,24 +381,28 @@ router.put('/plans/:id', requirePermission('plans.write'), async (req: Request, 
  * Deactivates a subscription plan.
  * Requirements: 17.6
  */
-router.post('/plans/:id/deactivate', requirePermission('plans.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
+router.post(
+  '/plans/:id/deactivate',
+  requirePermission('plans.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
 
-  try {
-    await adminService.deactivatePlan(adminReq.adminUser.id, param(req, 'id'));
-    res.status(200).json({ message: 'Plan deactivated successfully' });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message === 'Plan not found') {
-      res.status(404).json({ error: message });
-    } else if (message.includes('already inactive')) {
-      res.status(400).json({ error: message });
-    } else {
-      logger.error({ error }, 'Error deactivating plan');
-      res.status(500).json({ error: 'Internal server error' });
+    try {
+      await adminService.deactivatePlan(adminReq.adminUser.id, param(req, 'id'));
+      res.status(200).json({ message: 'Plan deactivated successfully' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Internal server error';
+      if (message === 'Plan not found') {
+        res.status(404).json({ error: message });
+      } else if (message.includes('already inactive')) {
+        res.status(400).json({ error: message });
+      } else {
+        logger.error({ error }, 'Error deactivating plan');
+        res.status(500).json({ error: 'Internal server error' });
+      }
     }
-  }
-});
+  },
+);
 
 // ─── Feature Entitlements ────────────────────────────────────────────────────
 
@@ -385,50 +411,62 @@ router.post('/plans/:id/deactivate', requirePermission('plans.write'), async (re
  * Gets feature entitlements for a plan.
  * Requirements: 17.7
  */
-router.get('/plans/:id/entitlements', requirePermission('plans.read'), async (req: Request, res: Response) => {
-  try {
-    const entitlements = await adminService.getFeatureEntitlements(param(req, 'id'));
-    res.status(200).json({ entitlements });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message === 'Plan not found') {
-      res.status(404).json({ error: message });
-    } else {
-      logger.error({ error }, 'Error fetching entitlements');
-      res.status(500).json({ error: 'Internal server error' });
+router.get(
+  '/plans/:id/entitlements',
+  requirePermission('plans.read'),
+  async (req: Request, res: Response) => {
+    try {
+      const entitlements = await adminService.getFeatureEntitlements(param(req, 'id'));
+      res.status(200).json({ entitlements });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Internal server error';
+      if (message === 'Plan not found') {
+        res.status(404).json({ error: message });
+      } else {
+        logger.error({ error }, 'Error fetching entitlements');
+        res.status(500).json({ error: 'Internal server error' });
+      }
     }
-  }
-});
+  },
+);
 
 /**
  * PUT /api/admin/plans/:id/entitlements
  * Updates feature entitlements for a plan.
  * Requirements: 17.7
  */
-router.put('/plans/:id/entitlements', requirePermission('plans.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
-  const { features } = req.body;
+router.put(
+  '/plans/:id/entitlements',
+  requirePermission('plans.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
+    const { features } = req.body;
 
-  if (!features || !Array.isArray(features)) {
-    res.status(400).json({ error: 'Features array is required' });
-    return;
-  }
-
-  try {
-    await adminService.setFeatureEntitlements(adminReq.adminUser.id, param(req, 'id'), features);
-    res.status(200).json({ message: 'Entitlements updated successfully' });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message === 'Plan not found') {
-      res.status(404).json({ error: message });
-    } else if (message.includes('required') || message.includes('must have') || message.includes('not registered')) {
-      res.status(400).json({ error: message });
-    } else {
-      logger.error({ error }, 'Error updating entitlements');
-      res.status(500).json({ error: 'Internal server error' });
+    if (!features || !Array.isArray(features)) {
+      res.status(400).json({ error: 'Features array is required' });
+      return;
     }
-  }
-});
+
+    try {
+      await adminService.setFeatureEntitlements(adminReq.adminUser.id, param(req, 'id'), features);
+      res.status(200).json({ message: 'Entitlements updated successfully' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Internal server error';
+      if (message === 'Plan not found') {
+        res.status(404).json({ error: message });
+      } else if (
+        message.includes('required') ||
+        message.includes('must have') ||
+        message.includes('not registered')
+      ) {
+        res.status(400).json({ error: message });
+      } else {
+        logger.error({ error }, 'Error updating entitlements');
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  },
+);
 
 // ─── Feature Registry ────────────────────────────────────────────────────────
 
@@ -481,24 +519,28 @@ router.get('/audit', requirePermission('audit.read'), async (req: Request, res: 
  * Moderates a user account (flag/disable/unflag).
  * Requirements: 17.9
  */
-router.post('/moderate/:userId', requirePermission('moderation.write'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
-  const { action } = req.body;
+router.post(
+  '/moderate/:userId',
+  requirePermission('moderation.write'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
+    const { action } = req.body;
 
-  const validActions: adminService.ModerationAction[] = ['flag', 'disable', 'unflag'];
-  if (!action || !validActions.includes(action)) {
-    res.status(400).json({ error: `Action must be one of: ${validActions.join(', ')}` });
-    return;
-  }
+    const validActions: adminService.ModerationAction[] = ['flag', 'disable', 'unflag'];
+    if (!action || !validActions.includes(action)) {
+      res.status(400).json({ error: `Action must be one of: ${validActions.join(', ')}` });
+      return;
+    }
 
-  try {
-    await adminService.moderateAccount(adminReq.adminUser.id, param(req, 'userId'), action);
-    res.status(200).json({ message: `Moderation action '${action}' applied successfully` });
-  } catch (error) {
-    logger.error({ error, userId: param(req, 'userId') }, 'Error moderating account');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+    try {
+      await adminService.moderateAccount(adminReq.adminUser.id, param(req, 'userId'), action);
+      res.status(200).json({ message: `Moderation action '${action}' applied successfully` });
+    } catch (error) {
+      logger.error({ error, userId: param(req, 'userId') }, 'Error moderating account');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 // ─── Platform Credentials ────────────────────────────────────────────────────
 
@@ -508,7 +550,7 @@ router.post('/moderate/:userId', requirePermission('moderation.write'), async (r
  */
 function validateProviderPayload(
   provider: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ): { valid: boolean; error?: string } {
   switch (provider) {
     case 'openai':
@@ -520,7 +562,11 @@ function validateProviderPayload(
       if (!body.accountSid || !body.authToken || !body.phoneNumber) {
         return { valid: false, error: 'accountSid, authToken, and phoneNumber are required' };
       }
-      if (typeof body.accountSid !== 'string' || typeof body.authToken !== 'string' || typeof body.phoneNumber !== 'string') {
+      if (
+        typeof body.accountSid !== 'string' ||
+        typeof body.authToken !== 'string' ||
+        typeof body.phoneNumber !== 'string'
+      ) {
         return { valid: false, error: 'accountSid, authToken, and phoneNumber must be strings' };
       }
       return { valid: true };
@@ -542,68 +588,81 @@ function validateProviderPayload(
  * Upserts credentials for a platform provider.
  * Requirements: 2.6, 8.1, 8.2, 8.3, 9.1, 9.2, 9.3, 9.4
  */
-router.post('/credentials/:provider', requirePermission('entitlements.manage'), async (req: Request, res: Response) => {
-  const adminReq = req as AdminAuthenticatedRequest;
-  const provider = param(req, 'provider');
+router.post(
+  '/credentials/:provider',
+  requirePermission('entitlements.manage'),
+  async (req: Request, res: Response) => {
+    const adminReq = req as AdminAuthenticatedRequest;
+    const provider = param(req, 'provider');
 
-  const validProviders = ['openai', 'twilio', 'stripe'];
-  if (!validProviders.includes(provider)) {
-    res.status(400).json({ error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` });
-    return;
-  }
+    const validProviders = ['openai', 'twilio', 'stripe'];
+    if (!validProviders.includes(provider)) {
+      res
+        .status(400)
+        .json({ error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` });
+      return;
+    }
 
-  // Validate required fields per provider
-  const validation = validateProviderPayload(provider, req.body);
-  if (!validation.valid) {
-    res.status(400).json({ error: validation.error });
-    return;
-  }
+    // Validate required fields per provider
+    const validation = validateProviderPayload(provider, req.body);
+    if (!validation.valid) {
+      res.status(400).json({ error: validation.error });
+      return;
+    }
 
-  try {
-    await setPlatformCredentials(
-      provider as keyof PlatformProviderMap,
-      req.body
-    );
+    try {
+      await setPlatformCredentials(provider as keyof PlatformProviderMap, req.body);
 
-    // Audit log
-    await adminService.logAuditEntry(adminReq.adminUser.id, 'credentials.update', 'platform_credentials', provider, {
-      provider,
-      fieldsUpdated: Object.keys(req.body),
-    });
+      // Audit log
+      await adminService.logAuditEntry(
+        adminReq.adminUser.id,
+        'credentials.update',
+        'platform_credentials',
+        provider,
+        {
+          provider,
+          fieldsUpdated: Object.keys(req.body),
+        },
+      );
 
-    res.status(200).json({ message: `Credentials for ${provider} saved successfully` });
-  } catch (error) {
-    logger.error({ error, provider }, 'Error updating platform credentials');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+      res.status(200).json({ message: `Credentials for ${provider} saved successfully` });
+    } catch (error) {
+      logger.error({ error, provider }, 'Error updating platform credentials');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * GET /api/admin/credentials/status
  * Returns configuration status for all platform providers (without revealing values).
  * Requirements: 2.6, 9.1, 9.2, 9.3, 9.4
  */
-router.get('/credentials/status', requirePermission('entitlements.manage'), async (_req: Request, res: Response) => {
-  try {
-    const providers = ['openai', 'twilio', 'stripe'];
-    const status: Record<string, { configured: boolean; updatedAt: string | null }> = {};
+router.get(
+  '/credentials/status',
+  requirePermission('entitlements.manage'),
+  async (_req: Request, res: Response) => {
+    try {
+      const providers = ['openai', 'twilio', 'stripe'];
+      const status: Record<string, { configured: boolean; updatedAt: string | null }> = {};
 
-    for (const provider of providers) {
-      const row = await queryOne<{ updated_at: Date }>(
-        'SELECT updated_at FROM platform_credentials WHERE provider = $1',
-        [provider]
-      );
-      status[provider] = {
-        configured: !!row,
-        updatedAt: row?.updated_at?.toISOString() ?? null,
-      };
+      for (const provider of providers) {
+        const row = await queryOne<{ updated_at: Date }>(
+          'SELECT updated_at FROM platform_credentials WHERE provider = $1',
+          [provider],
+        );
+        status[provider] = {
+          configured: !!row,
+          updatedAt: row?.updated_at?.toISOString() ?? null,
+        };
+      }
+
+      res.status(200).json({ providers: status });
+    } catch (error) {
+      logger.error({ error }, 'Error fetching credential status');
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    res.status(200).json({ providers: status });
-  } catch (error) {
-    logger.error({ error }, 'Error fetching credential status');
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  },
+);
 
 export default router;

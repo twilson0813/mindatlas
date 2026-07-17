@@ -24,11 +24,7 @@ const DEFAULT_PLANS: PlanDetails[] = [
     price: 0,
     storage: '500 MB',
     aiQueries: '10 / day',
-    features: [
-      'Unlimited Cards',
-      'Basic AI categorization',
-      'Web upload only',
-    ],
+    features: ['Unlimited Cards', 'Basic AI categorization', 'Web upload only'],
   },
   {
     id: 'pro',
@@ -121,7 +117,9 @@ export function PlanSelector({
               <ul className="plan-card__features">
                 {plan.features.map((feature) => (
                   <li key={feature} className="plan-card__feature">
-                    <span className="plan-card__feature-check" aria-hidden="true">✓</span>
+                    <span className="plan-card__feature-check" aria-hidden="true">
+                      ✓
+                    </span>
                     {feature}
                   </li>
                 ))}

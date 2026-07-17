@@ -87,8 +87,7 @@ export function validateCsvStructure(headers: string[]): ValidationResult {
   if (!normalizedHeaders.includes(REQUIRED_HEADER)) {
     return {
       valid: false,
-      error:
-        'CSV file must contain a "content" column in the header row',
+      error: 'CSV file must contain a "content" column in the header row',
     };
   }
 
@@ -103,10 +102,7 @@ export function validateCsvStructure(headers: string[]): ValidationResult {
  * @param rowCount - Number of data rows (excluding header)
  * @returns ValidationResult indicating if size/rows are within limits
  */
-export function validateCsvSize(
-  fileSize: number,
-  rowCount: number
-): ValidationResult {
+export function validateCsvSize(fileSize: number, rowCount: number): ValidationResult {
   if (fileSize > MAX_CSV_FILE_SIZE) {
     return {
       valid: false,
@@ -133,10 +129,7 @@ export function validateCsvSize(
  * @param rowIndex - 1-based row number (relative to data rows, not header)
  * @returns ParsedRow with item data, or SkippedRow with reason
  */
-export function parseRow(
-  row: Record<string, string>,
-  rowIndex: number
-): ParsedRow | SkippedRow {
+export function parseRow(row: Record<string, string>, rowIndex: number): ParsedRow | SkippedRow {
   // Normalize keys to lowercase
   const normalizedRow: Record<string, string> = {};
   for (const [key, value] of Object.entries(row)) {
@@ -210,10 +203,7 @@ export function parseRow(
  * @param fileBuffer - Raw CSV file buffer
  * @returns CsvImportResult with creation/skip counts
  */
-export async function importCsv(
-  userId: string,
-  fileBuffer: Buffer
-): Promise<CsvImportResult> {
+export async function importCsv(userId: string, fileBuffer: Buffer): Promise<CsvImportResult> {
   const fileSize = fileBuffer.length;
 
   // Step 1: Validate file size upfront
@@ -239,17 +229,13 @@ export async function importCsv(
 
     // Extract headers from the first parse
     const headerLine = csvContent.split(/\r?\n/)[0];
-    headers = headerLine
-      ? headerLine.split(',').map((h) => h.trim().replace(/^"|"$/g, ''))
-      : [];
+    headers = headerLine ? headerLine.split(',').map((h) => h.trim().replace(/^"|"$/g, '')) : [];
   } catch (parseError: unknown) {
     const err = parseError as Error & { lines?: number };
     // Extract line number info from csv-parse errors if available
     const lineMatch = err.message.match(/line\s+(\d+)/i);
     const lineInfo = lineMatch ? `line ${lineMatch[1]}` : 'unknown location';
-    const error = new Error(
-      `Malformed CSV: ${err.message} (at ${lineInfo})`
-    );
+    const error = new Error(`Malformed CSV: ${err.message} (at ${lineInfo})`);
     (error as Error & { statusCode: number }).statusCode = 400;
     throw error;
   }
@@ -309,12 +295,11 @@ export async function importCsv(
       itemsCreated: result.itemsCreated,
       rowsSkipped: result.rowsSkipped,
     },
-    'CSV import completed'
+    'CSV import completed',
   );
 
   return result;
 }
-
 
 /**
  * Exports all of a user's items as a CSV buffer.
@@ -342,9 +327,10 @@ export async function exportItems(userId: string): Promise<Buffer> {
   // Build CSV rows
   const rows = allItems.map((item) => {
     // Extract tags from metadata if available
-    const tags = item.metadata && Array.isArray(item.metadata.tags)
-      ? (item.metadata.tags as string[]).join(',')
-      : '';
+    const tags =
+      item.metadata && Array.isArray(item.metadata.tags)
+        ? (item.metadata.tags as string[]).join(',')
+        : '';
 
     // Serialize metadata (excluding tags since they have their own column)
     let metadataStr = '';
@@ -359,7 +345,9 @@ export async function exportItems(userId: string): Promise<Buffer> {
       content: item.content,
       content_type: item.content_type,
       tags,
-      creation_date: item.created_at.toISOString ? item.created_at.toISOString() : String(item.created_at),
+      creation_date: item.created_at.toISOString
+        ? item.created_at.toISOString()
+        : String(item.created_at),
       metadata: metadataStr,
     };
   });
@@ -390,7 +378,7 @@ export async function exportMaps(userId: string): Promise<Buffer> {
      FROM relationships r
      JOIN items src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
      JOIN items tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false`,
-    [userId]
+    [userId],
   );
 
   // Build CSV rows

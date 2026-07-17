@@ -25,7 +25,7 @@ function renderWithProviders(initialRoute: string = '/') {
           />
         </Routes>
       </AuthProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 

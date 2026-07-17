@@ -119,13 +119,14 @@ export function validateItemInput(input: Partial<ItemInput>): ValidationResult {
 
   if (input.content_type !== undefined) {
     if (!VALID_CONTENT_TYPES.includes(input.content_type as ContentType)) {
-      errors.push(
-        `Invalid content_type: must be one of ${VALID_CONTENT_TYPES.join(', ')}`
-      );
+      errors.push(`Invalid content_type: must be one of ${VALID_CONTENT_TYPES.join(', ')}`);
     }
   }
 
-  if (input.metadata !== undefined && (typeof input.metadata !== 'object' || input.metadata === null || Array.isArray(input.metadata))) {
+  if (
+    input.metadata !== undefined &&
+    (typeof input.metadata !== 'object' || input.metadata === null || Array.isArray(input.metadata))
+  ) {
     errors.push('Metadata must be a JSON object');
   }
 
@@ -190,7 +191,7 @@ export async function createItem(userId: string, input: ItemInput): Promise<Item
       input.source_domain || null,
       input.file_path || null,
       input.file_size || null,
-    ]
+    ],
   );
 
   if (!row) {
@@ -221,7 +222,7 @@ export async function getItem(userId: string, itemId: string): Promise<Item> {
     `SELECT id, user_id, title, content_encrypted, content_type, metadata, source_channel, source_domain, file_path, file_size, is_deleted, deleted_at, created_at, updated_at
      FROM item
      WHERE id = $1 AND is_deleted = false`,
-    [itemId]
+    [itemId],
   );
 
   if (!row) {
@@ -245,9 +246,13 @@ export async function getItem(userId: string, itemId: string): Promise<Item> {
  *
  * Requirements: 8.5
  */
-export async function listItems(userId: string, filters: ItemFilters = {}): Promise<PaginatedItems> {
+export async function listItems(
+  userId: string,
+  filters: ItemFilters = {},
+): Promise<PaginatedItems> {
   const page = filters.page && filters.page > 0 ? filters.page : 1;
-  const pageSize = filters.page_size && filters.page_size > 0 ? Math.min(filters.page_size, 100) : 20;
+  const pageSize =
+    filters.page_size && filters.page_size > 0 ? Math.min(filters.page_size, 100) : 20;
   const offset = (page - 1) * pageSize;
 
   // Build dynamic WHERE clause
@@ -258,7 +263,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Filter by category (via tag's category)
   if (filters.category) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id JOIN categories c ON t.category_id = c.id WHERE it.item_id = i.id AND c.name = $${paramIndex})`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id JOIN categories c ON t.category_id = c.id WHERE it.item_id = i.id AND c.name = $${paramIndex})`,
     );
     params.push(filters.category);
     paramIndex++;
@@ -267,7 +272,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Filter by tag name
   if (filters.tag) {
     conditions.push(
-      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id WHERE it.item_id = i.id AND t.name = $${paramIndex})`
+      `EXISTS (SELECT 1 FROM item_tags it JOIN tags t ON it.tag_id = t.id WHERE it.item_id = i.id AND t.name = $${paramIndex})`,
     );
     params.push(filters.tag);
     paramIndex++;
@@ -288,9 +293,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Filter by keyword in content (decrypted content is not searchable at DB level,
   // so we search in title and metadata for keywords)
   if (filters.keyword) {
-    conditions.push(
-      `(i.title ILIKE $${paramIndex} OR i.content_encrypted ILIKE $${paramIndex})`
-    );
+    conditions.push(`(i.title ILIKE $${paramIndex} OR i.content_encrypted ILIKE $${paramIndex})`);
     params.push(`%${filters.keyword}%`);
     paramIndex++;
   }
@@ -300,7 +303,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
   // Get total count
   const countResult = await queryOne<{ count: string }>(
     `SELECT COUNT(*) as count FROM items i WHERE ${whereClause}`,
-    params
+    params,
   );
   const total = parseInt(countResult?.count || '0', 10);
 
@@ -311,7 +314,7 @@ export async function listItems(userId: string, filters: ItemFilters = {}): Prom
      WHERE ${whereClause}
      ORDER BY i.created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-    [...params, pageSize, offset]
+    [...params, pageSize, offset],
   );
 
   const items = rows.map(rowToItem);
@@ -336,14 +339,14 @@ export async function deleteItem(userId: string, itemId: string): Promise<void> 
     `UPDATE item
      SET is_deleted = true, deleted_at = NOW(), updated_at = NOW()
      WHERE id = $1 AND user_id = $2 AND is_deleted = false`,
-    [itemId, userId]
+    [itemId, userId],
   );
 
   if (result.rowCount === 0) {
     // Check if the item exists but belongs to another user
     const existing = await queryOne<{ user_id: string }>(
       'SELECT user_id FROM items WHERE id = $1',
-      [itemId]
+      [itemId],
     );
 
     if (!existing) {
@@ -372,11 +375,14 @@ export async function deleteItem(userId: string, itemId: string): Promise<void> 
  * Returns relationships where the items is either the source or target,
  * and both source and target items belong to the same user.
  */
-export async function getItemRelationships(userId: string, itemId: string): Promise<Relationship[]> {
+export async function getItemRelationships(
+  userId: string,
+  itemId: string,
+): Promise<Relationship[]> {
   // First verify the item belongs to this user
   const item = await queryOne<{ id: string }>(
     'SELECT id FROM items WHERE id = $1 AND user_id = $2 AND is_deleted = false',
-    [itemId, userId]
+    [itemId, userId],
   );
 
   if (!item) {
@@ -392,7 +398,7 @@ export async function getItemRelationships(userId: string, itemId: string): Prom
      JOIN items src ON r.source_item_id = src.id AND src.user_id = $1 AND src.is_deleted = false
      JOIN items tgt ON r.target_item_id = tgt.id AND tgt.user_id = $1 AND tgt.is_deleted = false
      WHERE (r.source_item_id = $2 OR r.target_item_id = $2)`,
-    [userId, itemId]
+    [userId, itemId],
   );
 
   return relationships;

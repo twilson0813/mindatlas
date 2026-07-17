@@ -22,7 +22,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
     expect(screen.getByText('Admin Access Verification')).toBeInTheDocument();
     expect(screen.queryByText('Admin Content')).not.toBeInTheDocument();
@@ -32,7 +32,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
     const input = screen.getByLabelText('Authentication Code');
     fireEvent.change(input, { target: { value: '123' } });
@@ -43,7 +43,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
     const input = screen.getByLabelText('Authentication Code');
     fireEvent.change(input, { target: { value: '123456' } });
@@ -54,7 +54,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
     const input = screen.getByLabelText('Authentication Code') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'abc123def456' } });
@@ -70,7 +70,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
 
     const input = screen.getByLabelText('Authentication Code');
@@ -91,7 +91,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
 
     const input = screen.getByLabelText('Authentication Code');
@@ -113,7 +113,7 @@ describe('AdminMfaGate', () => {
     render(
       <AdminMfaGate>
         <div>Admin Content</div>
-      </AdminMfaGate>
+      </AdminMfaGate>,
     );
 
     const input = screen.getByLabelText('Authentication Code');

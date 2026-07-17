@@ -96,7 +96,16 @@ describe('Item Service', () => {
     });
 
     it('should accept all valid content_type values', () => {
-      const types = ['plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom'] as const;
+      const types = [
+        'plain_text',
+        'link',
+        'code_snippet',
+        'note',
+        'task',
+        'idea',
+        'file',
+        'custom',
+      ] as const;
       for (const type of types) {
         const result = validateItemInput({ content: 'test', content_type: type });
         expect(result.valid).toBe(true);
@@ -174,20 +183,17 @@ describe('Item Service', () => {
         source_channel: 'api',
       });
 
-      expect(mockQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO item'),
-        [
-          'user-1',
-          'My Note',
-          'encrypted:Hello world',
-          'note',
-          JSON.stringify({ priority: 'high' }),
-          'api',
-          null,
-          null,
-          null,
-        ]
-      );
+      expect(mockQueryOne).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO item'), [
+        'user-1',
+        'My Note',
+        'encrypted:Hello world',
+        'note',
+        JSON.stringify({ priority: 'high' }),
+        'api',
+        null,
+        null,
+        null,
+      ]);
     });
 
     it('should enqueue an AI processing job', async () => {
@@ -210,20 +216,20 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining(['plain_text'])
+        expect.arrayContaining(['plain_text']),
       );
     });
 
     it('should throw 400 for invalid input', async () => {
-      await expect(createItem('user-1', { content: '' }))
-        .rejects.toThrow('Validation failed');
+      await expect(createItem('user-1', { content: '' })).rejects.toThrow('Validation failed');
     });
 
     it('should throw if database insert fails', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
-      await expect(createItem('user-1', { content: 'test' }))
-        .rejects.toThrow('Failed to create item');
+      await expect(createItem('user-1', { content: 'test' })).rejects.toThrow(
+        'Failed to create item',
+      );
     });
   });
 
@@ -284,10 +290,9 @@ describe('Item Service', () => {
 
       await getItem('user-1', 'item-1');
 
-      expect(mockQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('is_deleted = false'),
-        ['item-1']
-      );
+      expect(mockQueryOne).toHaveBeenCalledWith(expect.stringContaining('is_deleted = false'), [
+        'item-1',
+      ]);
     });
   });
 
@@ -358,7 +363,7 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('category'),
-        expect.arrayContaining(['user-1', 'work'])
+        expect.arrayContaining(['user-1', 'work']),
       );
     });
 
@@ -370,7 +375,7 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('tag'),
-        expect.arrayContaining(['user-1', 'important'])
+        expect.arrayContaining(['user-1', 'important']),
       );
     });
 
@@ -382,7 +387,7 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('created_at >='),
-        expect.arrayContaining(['2024-01-01', '2024-01-31'])
+        expect.arrayContaining(['2024-01-01', '2024-01-31']),
       );
     });
 
@@ -394,7 +399,7 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('ILIKE'),
-        expect.arrayContaining(['%hello%'])
+        expect.arrayContaining(['%hello%']),
       );
     });
 
@@ -410,7 +415,7 @@ describe('Item Service', () => {
       // Check offset: page 3, size 10 → offset 20
       expect(mockQueryMany).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining([10, 20])
+        expect.arrayContaining([10, 20]),
       );
     });
 
@@ -431,7 +436,7 @@ describe('Item Service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('i.user_id = $1'),
-        expect.arrayContaining(['user-1'])
+        expect.arrayContaining(['user-1']),
       );
     });
   });
@@ -442,10 +447,10 @@ describe('Item Service', () => {
 
       await expect(deleteItem('user-1', 'item-1')).resolves.toBeUndefined();
 
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('is_deleted = true'),
-        ['item-1', 'user-1']
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('is_deleted = true'), [
+        'item-1',
+        'user-1',
+      ]);
     });
 
     it('should throw 404 when item does not exist', async () => {
@@ -481,7 +486,7 @@ describe('Item Service', () => {
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('deleted_at = NOW()'),
-        expect.any(Array)
+        expect.any(Array),
       );
     });
   });
@@ -527,13 +532,13 @@ describe('Item Service', () => {
       await getItemRelationships('user-1', 'item-1');
 
       // Verify both joins check user_id
-      expect(mockQueryMany).toHaveBeenCalledWith(
-        expect.stringContaining('src.user_id = $1'),
-        ['user-1', 'item-1']
-      );
+      expect(mockQueryMany).toHaveBeenCalledWith(expect.stringContaining('src.user_id = $1'), [
+        'user-1',
+        'item-1',
+      ]);
       expect(mockQueryMany).toHaveBeenCalledWith(
         expect.stringContaining('tgt.user_id = $1'),
-        expect.any(Array)
+        expect.any(Array),
       );
     });
 
@@ -544,10 +549,10 @@ describe('Item Service', () => {
       await getItemRelationships('user-1', 'item-1');
 
       // Verify item existence check scopes to user
-      expect(mockQueryOne).toHaveBeenCalledWith(
-        expect.stringContaining('user_id = $2'),
-        ['item-1', 'user-1']
-      );
+      expect(mockQueryOne).toHaveBeenCalledWith(expect.stringContaining('user_id = $2'), [
+        'item-1',
+        'user-1',
+      ]);
     });
   });
 });

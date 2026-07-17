@@ -71,9 +71,7 @@ describe('Property 33: Unlimited Card Creation Invariant', () => {
   const contentTypeArb = fc.constantFrom(...VALID_CONTENT_TYPES);
 
   // Generator for non-empty content strings
-  const contentArb = fc.string({ minLength: 1, maxLength: 500 }).filter(
-    (s) => s.trim().length > 0
-  );
+  const contentArb = fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.trim().length > 0);
 
   it('validateItemInput never rejects based on card count regardless of plan or existing card count', () => {
     fc.assert(
@@ -102,9 +100,9 @@ describe('Property 33: Unlimited Card Creation Invariant', () => {
             expect(error.toLowerCase()).not.toContain('maximum cards');
             expect(error.toLowerCase()).not.toContain('plan limit');
           }
-        }
+        },
       ),
-      { numRuns: 200 }
+      { numRuns: 200 },
     );
   });
 
@@ -126,7 +124,7 @@ describe('Property 33: Unlimited Card Creation Invariant', () => {
           expect(lowerName).not.toContain('max_card');
         }
       }),
-      { numRuns: 200 }
+      { numRuns: 200 },
     );
   });
 });

@@ -29,9 +29,7 @@ describe('Property 11: Item Card Rendering Completeness', () => {
     );
 
   // Generator for tag names (alphanumeric, non-empty)
-  const tagNameArb = fc
-    .stringMatching(/^[a-zA-Z][a-zA-Z0-9]{1,14}$/)
-    .filter((s) => s.length >= 2);
+  const tagNameArb = fc.stringMatching(/^[a-zA-Z][a-zA-Z0-9]{1,14}$/).filter((s) => s.length >= 2);
 
   // Generator for a tag with id, name, and color
   const tagArb = fc.record({
@@ -130,9 +128,7 @@ describe('Property 11: Item Card Rendering Completeness', () => {
 
         // Each tag should be rendered as a CategoryBadge with its name
         for (const tag of item.tags) {
-          const badge = article.querySelector(
-            `[aria-label="Category: ${tag.name}"]`,
-          );
+          const badge = article.querySelector(`[aria-label="Category: ${tag.name}"]`);
           expect(badge).not.toBeNull();
           // Verify the badge text includes the tag name
           expect(badge!.textContent).toContain(tag.name);

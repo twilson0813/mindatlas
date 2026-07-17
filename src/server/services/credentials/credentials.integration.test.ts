@@ -169,14 +169,14 @@ describe('Credential Management Integration Tests', () => {
       // Step 3: Verify audit log was written with correct fields
       expect(mockLogAuditEntry).toHaveBeenCalledTimes(1);
       expect(mockLogAuditEntry).toHaveBeenCalledWith(
-        'admin-integration-test',     // admin_user_id
-        'credentials.update',          // action
-        'platform_credentials',        // target_type
-        'openai',                      // target_id (provider)
+        'admin-integration-test', // admin_user_id
+        'credentials.update', // action
+        'platform_credentials', // target_type
+        'openai', // target_id (provider)
         expect.objectContaining({
           provider: 'openai',
           fieldsUpdated: ['apiKey'],
-        })
+        }),
       );
 
       // Step 4: Verify subsequent GET /credentials/status shows provider as configured
@@ -188,13 +188,11 @@ describe('Credential Management Integration Tests', () => {
     });
 
     it('should complete full flow for Twilio: authenticate, validate, store, and audit', async () => {
-      const postResponse = await request(app)
-        .post('/api/admin/credentials/twilio')
-        .send({
-          accountSid: 'AC_integration_test_sid',
-          authToken: 'auth_token_integration_test',
-          phoneNumber: '+15551234567',
-        });
+      const postResponse = await request(app).post('/api/admin/credentials/twilio').send({
+        accountSid: 'AC_integration_test_sid',
+        authToken: 'auth_token_integration_test',
+        phoneNumber: '+15551234567',
+      });
 
       expect(postResponse.status).toBe(200);
       expect(postResponse.body.message).toBe('Credentials for twilio saved successfully');
@@ -215,17 +213,15 @@ describe('Credential Management Integration Tests', () => {
         expect.objectContaining({
           provider: 'twilio',
           fieldsUpdated: expect.arrayContaining(['accountSid', 'authToken', 'phoneNumber']),
-        })
+        }),
       );
     });
 
     it('should complete full flow for Stripe: authenticate, validate, store, and audit', async () => {
-      const postResponse = await request(app)
-        .post('/api/admin/credentials/stripe')
-        .send({
-          secretKey: 'sk_test_integration_abc123',
-          webhookSecret: 'whsec_integration_xyz789',
-        });
+      const postResponse = await request(app).post('/api/admin/credentials/stripe').send({
+        secretKey: 'sk_test_integration_abc123',
+        webhookSecret: 'whsec_integration_xyz789',
+      });
 
       expect(postResponse.status).toBe(200);
       expect(postResponse.body.message).toBe('Credentials for stripe saved successfully');
@@ -245,14 +241,12 @@ describe('Credential Management Integration Tests', () => {
         expect.objectContaining({
           provider: 'stripe',
           fieldsUpdated: expect.arrayContaining(['secretKey', 'webhookSecret']),
-        })
+        }),
       );
     });
 
     it('should reject request and not store/audit when validation fails', async () => {
-      const response = await request(app)
-        .post('/api/admin/credentials/openai')
-        .send({}); // missing apiKey
+      const response = await request(app).post('/api/admin/credentials/openai').send({}); // missing apiKey
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('apiKey is required');
@@ -277,9 +271,7 @@ describe('Credential Management Integration Tests', () => {
     it('should not leak credential values in the audit log details', async () => {
       const sensitiveApiKey = 'sk-super-secret-key-never-leak';
 
-      await request(app)
-        .post('/api/admin/credentials/openai')
-        .send({ apiKey: sensitiveApiKey });
+      await request(app).post('/api/admin/credentials/openai').send({ apiKey: sensitiveApiKey });
 
       const [, , , , details] = mockLogAuditEntry.mock.calls[0];
       const detailsStr = JSON.stringify(details);
@@ -365,7 +357,7 @@ describe('Credential Management Integration Tests', () => {
 
       // Verify the unique constraint exists
       const uniqueConstraint = constraints.find(
-        (c) => c.table === 'user_integrations' && c.name === 'uq_user_integrations_user_provider'
+        (c) => c.table === 'user_integrations' && c.name === 'uq_user_integrations_user_provider',
       );
       expect(uniqueConstraint).toBeDefined();
       expect(uniqueConstraint!.constraint).toEqual({ unique: ['user_id', 'provider'] });
@@ -486,7 +478,7 @@ describe('Credential Management Integration Tests', () => {
 
       // Find the Notion data migration SQL
       const migrateSql = sqlStatements.find(
-        (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections')
+        (s) => s.includes('INSERT INTO user_integrations') && s.includes('notion_connections'),
       );
       expect(migrateSql).toBeDefined();
 

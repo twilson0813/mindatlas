@@ -31,7 +31,27 @@ export function sanitizeHtml(input: string): string {
 export function sanitizeHtmlPermissive(input: string): string {
   if (!input) return '';
   return purify.sanitize(input, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'pre', 'blockquote'],
+    ALLOWED_TAGS: [
+      'b',
+      'i',
+      'em',
+      'strong',
+      'a',
+      'p',
+      'br',
+      'ul',
+      'ol',
+      'li',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'code',
+      'pre',
+      'blockquote',
+    ],
     ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
   });
 }
@@ -47,13 +67,13 @@ export function sanitizeHtmlPermissive(input: string): string {
 export function sanitizeForSql(input: string): string {
   if (!input) return '';
   return input
-    .replace(/\\/g, '\\\\')    // Escape backslashes first
-    .replace(/'/g, "''")       // Escape single quotes (SQL standard)
-    .replace(/"/g, '""')       // Escape double quotes
-    .replace(/\x00/g, '')      // Remove null bytes
-    .replace(/\x1a/g, '')      // Remove SUB character (used in some SQL injection)
-    .replace(/\r/g, '\\r')     // Escape carriage return
-    .replace(/\n/g, '\\n');    // Escape newline
+    .replace(/\\/g, '\\\\') // Escape backslashes first
+    .replace(/'/g, "''") // Escape single quotes (SQL standard)
+    .replace(/"/g, '""') // Escape double quotes
+    .replace(/\x00/g, '') // Remove null bytes
+    .replace(/\x1a/g, '') // Remove SUB character (used in some SQL injection)
+    .replace(/\r/g, '\\r') // Escape carriage return
+    .replace(/\n/g, '\\n'); // Escape newline
 }
 
 /**
@@ -85,11 +105,11 @@ export function containsSqlInjectionPatterns(input: string): boolean {
   if (!input) return false;
   const sqlPatterns = [
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|EXEC|UNION)\b.*\b(FROM|INTO|TABLE|SET|WHERE|ALL)\b)/i,
-    /--\s/,                    // SQL single-line comment
-    /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP)/i,  // Statement chaining
-    /'\s*(OR|AND)\s+.*=/i,     // Tautology attacks
-    /WAITFOR\s+DELAY/i,        // Time-based attacks
-    /BENCHMARK\s*\(/i,         // MySQL time-based attacks
+    /--\s/, // SQL single-line comment
+    /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP)/i, // Statement chaining
+    /'\s*(OR|AND)\s+.*=/i, // Tautology attacks
+    /WAITFOR\s+DELAY/i, // Time-based attacks
+    /BENCHMARK\s*\(/i, // MySQL time-based attacks
   ];
   return sqlPatterns.some((pattern) => pattern.test(input));
 }

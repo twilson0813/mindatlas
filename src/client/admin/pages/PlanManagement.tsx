@@ -75,7 +75,7 @@ export function PlanManagement() {
         setError(err instanceof Error ? err.message : 'Failed to load entitlements');
       }
     },
-    [token]
+    [token],
   );
 
   useEffect(() => {
@@ -164,10 +164,7 @@ export function PlanManagement() {
       <section aria-labelledby="plans-heading">
         <div className="admin-section-header">
           <h3 id="plans-heading">Subscription Plans</h3>
-          <button
-            className="admin-btn admin-btn-primary"
-            onClick={() => setShowCreateForm(true)}
-          >
+          <button className="admin-btn admin-btn-primary" onClick={() => setShowCreateForm(true)}>
             Create Plan
           </button>
         </div>
@@ -192,11 +189,7 @@ export function PlanManagement() {
               <button type="submit" className="admin-btn admin-btn-primary">
                 Create
               </button>
-              <button
-                type="button"
-                className="admin-btn"
-                onClick={() => setShowCreateForm(false)}
-              >
+              <button type="button" className="admin-btn" onClick={() => setShowCreateForm(false)}>
                 Cancel
               </button>
             </div>
@@ -221,7 +214,9 @@ export function PlanManagement() {
                 {!plan.isActive && <span className="admin-badge-inactive">Inactive</span>}
               </div>
               <div className="admin-plan-card-details">
-                <span>${(plan.price / 100).toFixed(2)}/{plan.billingInterval}</span>
+                <span>
+                  ${(plan.price / 100).toFixed(2)}/{plan.billingInterval}
+                </span>
                 <span>{plan.storageLimit} MB storage</span>
                 <span>{plan.aiQueryLimit === -1 ? 'Unlimited' : plan.aiQueryLimit} AI queries</span>
               </div>

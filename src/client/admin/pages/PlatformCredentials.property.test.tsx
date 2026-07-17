@@ -13,11 +13,7 @@ const MASKED_PLACEHOLDER = '••••••••configured';
  * Checks whether `haystack` contains any contiguous substring of `source`
  * that is longer than `maxLen` characters.
  */
-function containsSubstringLongerThan(
-  haystack: string,
-  source: string,
-  maxLen: number,
-): boolean {
+function containsSubstringLongerThan(haystack: string, source: string, maxLen: number): boolean {
   if (source.length <= maxLen) return false;
   for (let i = 0; i <= source.length - (maxLen + 1); i++) {
     const sub = source.slice(i, i + maxLen + 1);
@@ -46,9 +42,7 @@ function containsSubstringLongerThan(
  */
 describe('Property 11: Credential masking in admin display', () => {
   // Generator for arbitrary credential strings of length > 4
-  const credentialArb = fc.string({ minLength: 5, maxLength: 200 }).filter(
-    (s) => s.length > 4,
-  );
+  const credentialArb = fc.string({ minLength: 5, maxLength: 200 }).filter((s) => s.length > 4);
 
   it('masked placeholder shall not contain any contiguous substring of the original credential longer than 4 chars', () => {
     fc.assert(
@@ -58,11 +52,7 @@ describe('Property 11: Credential masking in admin display', () => {
 
         // Verify: no contiguous substring of the credential longer than 4 chars
         // appears in the masked output
-        const hasLeakedSubstring = containsSubstringLongerThan(
-          masked,
-          credential,
-          4,
-        );
+        const hasLeakedSubstring = containsSubstringLongerThan(masked, credential, 4);
 
         expect(hasLeakedSubstring).toBe(false);
       }),
@@ -75,27 +65,22 @@ describe('Property 11: Credential masking in admin display', () => {
     // For any credential string, the status payload never includes it.
     const statusResponseArb = fc.record({
       configured: fc.boolean(),
-      updatedAt: fc.option(fc.date().map((d) => d.toISOString()), { nil: null }),
+      updatedAt: fc.option(
+        fc.date().map((d) => d.toISOString()),
+        { nil: null },
+      ),
     });
 
     fc.assert(
-      fc.property(
-        credentialArb,
-        statusResponseArb,
-        (credential, statusResponse) => {
-          // Serialize the status response as the API would return it
-          const responseJson = JSON.stringify(statusResponse);
+      fc.property(credentialArb, statusResponseArb, (credential, statusResponse) => {
+        // Serialize the status response as the API would return it
+        const responseJson = JSON.stringify(statusResponse);
 
-          // The response must not contain any 5+ char substring of the credential
-          const hasLeaked = containsSubstringLongerThan(
-            responseJson,
-            credential,
-            4,
-          );
+        // The response must not contain any 5+ char substring of the credential
+        const hasLeaked = containsSubstringLongerThan(responseJson, credential, 4);
 
-          expect(hasLeaked).toBe(false);
-        },
-      ),
+        expect(hasLeaked).toBe(false);
+      }),
       { numRuns: 150 },
     );
   });

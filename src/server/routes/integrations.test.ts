@@ -100,7 +100,7 @@ describe('Integrations Routes - n8n', () => {
 
     it('should return 500 on service error', async () => {
       (setUserIntegration as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       const res = await request(app)
@@ -119,9 +119,7 @@ describe('Integrations Routes - n8n', () => {
         metadata: null,
       });
 
-      const res = await request(app)
-        .get('/api/integrations/n8n')
-        .expect(200);
+      const res = await request(app).get('/api/integrations/n8n').expect(200);
 
       expect(res.body.integration).toEqual({
         webhookUrl: 'https://n8n.example.com/webhook/123',
@@ -134,9 +132,7 @@ describe('Integrations Routes - n8n', () => {
     it('should return 200 with null when not configured', async () => {
       (getUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
-      const res = await request(app)
-        .get('/api/integrations/n8n')
-        .expect(200);
+      const res = await request(app).get('/api/integrations/n8n').expect(200);
 
       expect(res.body.integration).toBeNull();
       expect(getUserIntegration).toHaveBeenCalledWith('user-1', 'n8n');
@@ -144,12 +140,10 @@ describe('Integrations Routes - n8n', () => {
 
     it('should return 500 on service error', async () => {
       (getUserIntegration as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Decryption failed')
+        new Error('Decryption failed'),
       );
 
-      const res = await request(app)
-        .get('/api/integrations/n8n')
-        .expect(500);
+      const res = await request(app).get('/api/integrations/n8n').expect(500);
 
       expect(res.body.error).toBe('Decryption failed');
     });
@@ -159,21 +153,17 @@ describe('Integrations Routes - n8n', () => {
     it('should return 204 on successful deletion', async () => {
       (deleteUserIntegration as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
-      await request(app)
-        .delete('/api/integrations/n8n')
-        .expect(204);
+      await request(app).delete('/api/integrations/n8n').expect(204);
 
       expect(deleteUserIntegration).toHaveBeenCalledWith('user-1', 'n8n');
     });
 
     it('should return 500 on service error', async () => {
       (deleteUserIntegration as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
-      const res = await request(app)
-        .delete('/api/integrations/n8n')
-        .expect(500);
+      const res = await request(app).delete('/api/integrations/n8n').expect(500);
 
       expect(res.body.error).toBe('Database connection failed');
     });

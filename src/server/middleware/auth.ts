@@ -14,11 +14,7 @@ import type { AuthenticatedUser } from '../types/express.js';
  *
  * Requirements: 1.4 (session token expiry), 2.2 (unauthenticated rejection)
  */
-export function authenticateToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function authenticateToken(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

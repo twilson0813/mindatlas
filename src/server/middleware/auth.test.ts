@@ -86,7 +86,7 @@ describe('Auth Middleware - authenticateToken', () => {
       const token = jwt.sign(
         { sub: 'user-123', email: 'test@example.com', role: 'user' },
         'wrong-secret',
-        { expiresIn: '15m' }
+        { expiresIn: '15m' },
       );
       const req = createMockRequest(`Bearer ${token}`) as Request;
       const res = createMockResponse() as Response;
@@ -102,7 +102,7 @@ describe('Auth Middleware - authenticateToken', () => {
       const token = jwt.sign(
         { sub: 'user-123', email: 'test@example.com', role: 'user' },
         config.jwtSecret,
-        { expiresIn: '-1s' } // Already expired
+        { expiresIn: '-1s' }, // Already expired
       );
       const req = createMockRequest(`Bearer ${token}`) as Request;
       const res = createMockResponse() as Response;
@@ -119,11 +119,13 @@ describe('Auth Middleware - authenticateToken', () => {
       const token = jwt.sign(
         { sub: 'user-123', email: 'test@example.com', role: 'user' },
         config.jwtSecret,
-        { expiresIn: '15m' }
+        { expiresIn: '15m' },
       );
       // Tamper with the payload section
       const parts = token.split('.');
-      parts[1] = Buffer.from('{"sub":"hacker","email":"hack@evil.com","role":"admin"}').toString('base64url');
+      parts[1] = Buffer.from('{"sub":"hacker","email":"hack@evil.com","role":"admin"}').toString(
+        'base64url',
+      );
       const tamperedToken = parts.join('.');
 
       const req = createMockRequest(`Bearer ${tamperedToken}`) as Request;
@@ -142,7 +144,7 @@ describe('Auth Middleware - authenticateToken', () => {
       const token = jwt.sign(
         { sub: 'user-123', email: 'test@example.com', role: 'user' },
         config.jwtSecret,
-        { expiresIn: '15m' }
+        { expiresIn: '15m' },
       );
       const req = createMockRequest(`Bearer ${token}`) as Request;
       const res = createMockResponse() as Response;
@@ -161,7 +163,7 @@ describe('Auth Middleware - authenticateToken', () => {
       const token = jwt.sign(
         { sub: 'user-456', email: 'admin@example.com', role: 'admin' },
         config.jwtSecret,
-        { expiresIn: '15m' }
+        { expiresIn: '15m' },
       );
       const req = createMockRequest(`Bearer ${token}`) as Request;
       const res = createMockResponse() as Response;
@@ -182,7 +184,7 @@ describe('Auth Middleware - authenticateToken', () => {
         const token = jwt.sign(
           { sub: 'user-789', email: 'test@example.com', role },
           config.jwtSecret,
-          { expiresIn: '15m' }
+          { expiresIn: '15m' },
         );
         const req = createMockRequest(`Bearer ${token}`) as Request;
         const res = createMockResponse() as Response;

@@ -61,9 +61,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         <h3 className="item-card-title">{item.title}</h3>
         <p className="item-card-snippet">{item.snippet}</p>
         <div className="item-card-meta">
-          {item.sourceDomain && (
-            <span className="item-card-source">{item.sourceDomain}</span>
-          )}
+          {item.sourceDomain && <span className="item-card-source">{item.sourceDomain}</span>}
           <time className="item-card-timestamp" dateTime={item.createdAt}>
             {formatTimestamp(item.createdAt)}
           </time>

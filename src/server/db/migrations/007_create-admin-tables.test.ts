@@ -67,7 +67,7 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should create admin_roles table with correct columns', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'admin_roles'
+        (call) => call[0] === 'admin_roles',
       );
       expect(createTableCall).toBeDefined();
 
@@ -88,7 +88,7 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should create admin_users table with correct columns and foreign keys', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'admin_users'
+        (call) => call[0] === 'admin_users',
       );
       expect(createTableCall).toBeDefined();
 
@@ -114,7 +114,7 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should create audit_log table with correct columns', () => {
       const createTableCall = (mock.pgm.createTable as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call) => call[0] === 'audit_log'
+        (call) => call[0] === 'audit_log',
       );
       expect(createTableCall).toBeDefined();
 
@@ -136,25 +136,19 @@ describe('Migration 007: Create admin tables', () => {
     });
 
     it('should create admin_user_summary view via SQL', () => {
-      const viewSql = mock.sqlStatements.find((s) =>
-        s.includes('CREATE VIEW admin_user_summary')
-      );
+      const viewSql = mock.sqlStatements.find((s) => s.includes('CREATE VIEW admin_user_summary'));
       expect(viewSql).toBeDefined();
     });
 
     it('should NOT include content_encrypted in admin_user_summary view', () => {
-      const viewSql = mock.sqlStatements.find((s) =>
-        s.includes('CREATE VIEW admin_user_summary')
-      );
+      const viewSql = mock.sqlStatements.find((s) => s.includes('CREATE VIEW admin_user_summary'));
       expect(viewSql).toBeDefined();
       expect(viewSql).not.toContain('content_encrypted');
       expect(viewSql).not.toContain('file_path');
     });
 
     it('should include user metadata fields in admin_user_summary view', () => {
-      const viewSql = mock.sqlStatements.find((s) =>
-        s.includes('CREATE VIEW admin_user_summary')
-      );
+      const viewSql = mock.sqlStatements.find((s) => s.includes('CREATE VIEW admin_user_summary'));
       expect(viewSql).toBeDefined();
       expect(viewSql).toContain('u.email');
       expect(viewSql).toContain('u.is_locked');
@@ -163,9 +157,7 @@ describe('Migration 007: Create admin tables', () => {
     });
 
     it('should include subscription info in admin_user_summary view', () => {
-      const viewSql = mock.sqlStatements.find((s) =>
-        s.includes('CREATE VIEW admin_user_summary')
-      );
+      const viewSql = mock.sqlStatements.find((s) => s.includes('CREATE VIEW admin_user_summary'));
       expect(viewSql).toBeDefined();
       expect(viewSql).toContain('plan_name');
       expect(viewSql).toContain('subscription_status');
@@ -173,7 +165,7 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should seed three admin roles', () => {
       const seedSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin')
+        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin'),
       );
       expect(seedSql).toBeDefined();
       expect(seedSql).toContain('super_admin');
@@ -183,7 +175,7 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should give super_admin all permissions including roles.manage', () => {
       const seedSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin')
+        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin'),
       );
       expect(seedSql).toBeDefined();
       expect(seedSql).toContain('roles.manage');
@@ -197,20 +189,24 @@ describe('Migration 007: Create admin tables', () => {
 
     it('should give admin role user and plan management permissions but not roles.manage', () => {
       const seedSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin')
+        (s) => s.includes('INSERT INTO admin_roles') && s.includes('super_admin'),
       );
       expect(seedSql).toBeDefined();
       // The admin row permissions should include user/plan management
       // Check that the admin entry has users/plans permissions
-      expect(seedSql).toContain('"users.view", "users.disable", "users.delete", "users.unlock", "plans.create", "plans.modify", "plans.deactivate", "entitlements.manage", "audit.view", "metrics.view"');
+      expect(seedSql).toContain(
+        '"users.view", "users.disable", "users.delete", "users.unlock", "plans.create", "plans.modify", "plans.deactivate", "entitlements.manage", "audit.view", "metrics.view"',
+      );
     });
 
     it('should give moderator role only flag/disable permissions', () => {
       const seedSql = mock.sqlStatements.find(
-        (s) => s.includes('INSERT INTO admin_roles') && s.includes('moderator')
+        (s) => s.includes('INSERT INTO admin_roles') && s.includes('moderator'),
       );
       expect(seedSql).toBeDefined();
-      expect(seedSql).toContain('"users.view", "moderation.flag", "moderation.disable", "audit.view"');
+      expect(seedSql).toContain(
+        '"users.view", "moderation.flag", "moderation.disable", "audit.view"',
+      );
     });
 
     it('should create indexes on admin_roles', () => {
@@ -241,8 +237,8 @@ describe('Migration 007: Create admin tables', () => {
     });
 
     it('should drop the admin_user_summary view', () => {
-      const dropViewSql = mock.sqlStatements.find((s) =>
-        s.includes('DROP VIEW') && s.includes('admin_user_summary')
+      const dropViewSql = mock.sqlStatements.find(
+        (s) => s.includes('DROP VIEW') && s.includes('admin_user_summary'),
       );
       expect(dropViewSql).toBeDefined();
     });

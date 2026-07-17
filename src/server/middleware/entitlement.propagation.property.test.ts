@@ -44,10 +44,25 @@ const mockedRedisDel = vi.mocked(redisClient.del);
 const mockedQueryMany = vi.mocked(queryMany);
 
 // Generator: random feature keys (dot-separated identifiers)
-const featureKeyArb = fc.tuple(
-  fc.constantFrom('input', 'ai', 'integration', 'export', 'advanced'),
-  fc.constantFrom('sms', 'api', 'csv', 'categorization', 'relationship_mapping', 'natural_language', 'cluster_summaries', 'suggestions', 'priority_processing', 'notion', 'n8n', 'custom_categories'),
-).map(([prefix, suffix]) => `${prefix}.${suffix}`);
+const featureKeyArb = fc
+  .tuple(
+    fc.constantFrom('input', 'ai', 'integration', 'export', 'advanced'),
+    fc.constantFrom(
+      'sms',
+      'api',
+      'csv',
+      'categorization',
+      'relationship_mapping',
+      'natural_language',
+      'cluster_summaries',
+      'suggestions',
+      'priority_processing',
+      'notion',
+      'n8n',
+      'custom_categories',
+    ),
+  )
+  .map(([prefix, suffix]) => `${prefix}.${suffix}`);
 
 // Generator: random non-empty set of feature keys (for initial entitlements)
 const featureListArb = fc.uniqueArray(featureKeyArb, { minLength: 1, maxLength: 8 });
@@ -105,10 +120,7 @@ describe('Property 30: Runtime Entitlement Propagation', () => {
           expect(afterInvalidation).toEqual(updatedFeatures);
 
           // The old cached features must NOT be returned
-          if (
-            JSON.stringify(initialFeatures.sort()) !==
-            JSON.stringify(updatedFeatures.sort())
-          ) {
+          if (JSON.stringify(initialFeatures.sort()) !== JSON.stringify(updatedFeatures.sort())) {
             expect(afterInvalidation).not.toEqual(initialFeatures);
           }
         },
@@ -135,9 +147,7 @@ describe('Property 30: Runtime Entitlement Propagation', () => {
           // After invalidation, Redis returns null (cache miss)
           mockedRedisGet.mockResolvedValueOnce(null);
           // DB returns the fresh features (admin's update)
-          mockedQueryMany.mockResolvedValueOnce(
-            freshFeatures.map((key) => ({ feature_key: key })),
-          );
+          mockedQueryMany.mockResolvedValueOnce(freshFeatures.map((key) => ({ feature_key: key })));
           mockedRedisSet.mockResolvedValueOnce('OK');
 
           const result = await loadEntitlements(planId);
@@ -159,28 +169,22 @@ describe('Property 30: Runtime Entitlement Propagation', () => {
 
   it('should propagate changes for any plan regardless of plan identifier', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        planIdArb,
-        featureListArb,
-        async (planId, newFeatures) => {
-          // After invalidation for any planId, the system re-fetches from DB
-          mockedRedisDel.mockResolvedValueOnce(1);
-          await invalidateCache(planId);
+      fc.asyncProperty(planIdArb, featureListArb, async (planId, newFeatures) => {
+        // After invalidation for any planId, the system re-fetches from DB
+        mockedRedisDel.mockResolvedValueOnce(1);
+        await invalidateCache(planId);
 
-          // The del call targets the correct plan-specific key
-          expect(redisClient.del).toHaveBeenCalledWith(`entitlements:${planId}`);
+        // The del call targets the correct plan-specific key
+        expect(redisClient.del).toHaveBeenCalledWith(`entitlements:${planId}`);
 
-          // Subsequent load hits DB
-          mockedRedisGet.mockResolvedValueOnce(null);
-          mockedQueryMany.mockResolvedValueOnce(
-            newFeatures.map((key) => ({ feature_key: key })),
-          );
-          mockedRedisSet.mockResolvedValueOnce('OK');
+        // Subsequent load hits DB
+        mockedRedisGet.mockResolvedValueOnce(null);
+        mockedQueryMany.mockResolvedValueOnce(newFeatures.map((key) => ({ feature_key: key })));
+        mockedRedisSet.mockResolvedValueOnce('OK');
 
-          const result = await loadEntitlements(planId);
-          expect(result).toEqual(newFeatures);
-        },
-      ),
+        const result = await loadEntitlements(planId);
+        expect(result).toEqual(newFeatures);
+      }),
       { numRuns: 200 },
     );
   });

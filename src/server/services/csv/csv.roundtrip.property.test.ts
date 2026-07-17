@@ -39,12 +39,15 @@ describe('Property 19: CSV Import-Export Round Trip', () => {
   // Generator: comma-separated tag strings
   const tagsArb = fc.oneof(
     fc.constant(''),
-    fc.array(
-      fc.string({ minLength: 1, maxLength: 20 })
-        .filter((s) => s.trim().length > 0)
-        .map((s) => s.replace(/,/g, '').replace(/\0/g, '').trim()),
-      { minLength: 1, maxLength: 5 },
-    ).map((tags) => tags.join(',')),
+    fc
+      .array(
+        fc
+          .string({ minLength: 1, maxLength: 20 })
+          .filter((s) => s.trim().length > 0)
+          .map((s) => s.replace(/,/g, '').replace(/\0/g, '').trim()),
+        { minLength: 1, maxLength: 5 },
+      )
+      .map((tags) => tags.join(',')),
   );
 
   // Generator: a single CSV row data object
@@ -60,7 +63,9 @@ describe('Property 19: CSV Import-Export Round Trip', () => {
   /**
    * Helper: serialize rows to CSV string, then parse back
    */
-  function serializeToCsv(rows: Array<{ content: string; content_type: string; tags: string }>): string {
+  function serializeToCsv(
+    rows: Array<{ content: string; content_type: string; tags: string }>,
+  ): string {
     return stringify(rows, {
       header: true,
       columns: ['content', 'content_type', 'tags'],
@@ -84,19 +89,25 @@ describe('Property 19: CSV Import-Export Round Trip', () => {
    * Normalizes the data to focus on content fidelity.
    */
   function extractRowData(records: Record<string, string>[]) {
-    return records.map((record, i) => {
-      const result = parseRow(record, i + 1);
-      if (result.type === 'parsed') {
-        return {
-          content: result.data.content,
-          content_type: result.data.content_type || 'plain_text',
-          tags: result.data.metadata && Array.isArray((result.data.metadata as Record<string, unknown>).tags)
-            ? ((result.data.metadata as Record<string, unknown>).tags as string[]).sort().join(',')
-            : '',
-        };
-      }
-      return null;
-    }).filter((r) => r !== null);
+    return records
+      .map((record, i) => {
+        const result = parseRow(record, i + 1);
+        if (result.type === 'parsed') {
+          return {
+            content: result.data.content,
+            content_type: result.data.content_type || 'plain_text',
+            tags:
+              result.data.metadata &&
+              Array.isArray((result.data.metadata as Record<string, unknown>).tags)
+                ? ((result.data.metadata as Record<string, unknown>).tags as string[])
+                    .sort()
+                    .join(',')
+                : '',
+          };
+        }
+        return null;
+      })
+      .filter((r) => r !== null);
   }
 
   it('should produce equivalent data after serialize → parse → serialize → parse', () => {
@@ -135,7 +146,10 @@ describe('Property 19: CSV Import-Export Round Trip', () => {
   it('should preserve content with unicode characters through round-trip', () => {
     // Specific generator for unicode-heavy content
     const unicodeContentArb = fc.oneof(
-      fc.unicodeString({ minLength: 1, maxLength: 100 }).filter((s) => s.trim().length > 0).map((s) => s.replace(/\0/g, '')),
+      fc
+        .unicodeString({ minLength: 1, maxLength: 100 })
+        .filter((s) => s.trim().length > 0)
+        .map((s) => s.replace(/\0/g, '')),
       fc.constant('Hello 世界'),
       fc.constant('Ñoño señor'),
       fc.constant('émojis 🎉🚀✨'),
@@ -187,13 +201,15 @@ describe('Property 19: CSV Import-Export Round Trip', () => {
       fc.constant('mixed, "quotes", and\nnewlines'),
       fc.constant('tab\there and\tthere'),
       // Generate strings that include at least one special CSV character
-      fc.tuple(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        fc.constantFrom(',', '"', '\n', '\r\n'),
-        fc.string({ minLength: 1, maxLength: 50 }),
-      ).map(([before, special, after]) => `${before}${special}${after}`)
-       .filter((s) => s.trim().length > 0)
-       .map((s) => s.replace(/\0/g, '')),
+      fc
+        .tuple(
+          fc.string({ minLength: 1, maxLength: 50 }),
+          fc.constantFrom(',', '"', '\n', '\r\n'),
+          fc.string({ minLength: 1, maxLength: 50 }),
+        )
+        .map(([before, special, after]) => `${before}${special}${after}`)
+        .filter((s) => s.trim().length > 0)
+        .map((s) => s.replace(/\0/g, '')),
     );
 
     const specialRowsArb = fc.array(

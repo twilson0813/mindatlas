@@ -156,7 +156,7 @@ describe('Entitlement Middleware', () => {
 
       mockedQueryOne.mockResolvedValue({ plan_id: 'business' });
       mockedRedisGet.mockResolvedValue(
-        JSON.stringify(['input.sms', 'ai.natural_language', 'integration.notion', 'export.csv'])
+        JSON.stringify(['input.sms', 'ai.natural_language', 'integration.notion', 'export.csv']),
       );
 
       await middleware(req, res, mockNext);
@@ -191,13 +191,13 @@ describe('Entitlement Middleware', () => {
       expect(result).toEqual(['input.sms', 'ai.natural_language']);
       expect(mockedQueryMany).toHaveBeenCalledWith(
         'SELECT feature_key FROM plan_entitlements WHERE plan_id = $1 AND enabled = true',
-        ['pro']
+        ['pro'],
       );
       expect(mockedRedisSet).toHaveBeenCalledWith(
         'entitlements:pro',
         JSON.stringify(['input.sms', 'ai.natural_language']),
         'EX',
-        3600
+        3600,
       );
     });
 
@@ -209,12 +209,7 @@ describe('Entitlement Middleware', () => {
       const result = await loadEntitlements('free');
 
       expect(result).toEqual([]);
-      expect(mockedRedisSet).toHaveBeenCalledWith(
-        'entitlements:free',
-        '[]',
-        'EX',
-        3600
-      );
+      expect(mockedRedisSet).toHaveBeenCalledWith('entitlements:free', '[]', 'EX', 3600);
     });
   });
 

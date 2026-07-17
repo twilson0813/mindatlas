@@ -51,7 +51,7 @@ const featureKeyArb = fc
     fc.stringOf(fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz_'.split('')), {
       minLength: 2,
       maxLength: 15,
-    })
+    }),
   )
   .map(([category, name]) => `${category}.${name}`);
 
@@ -124,11 +124,11 @@ describe('Property 29: Entitlement Enforcement', () => {
             expect.objectContaining({
               error: 'Feature not available in your plan',
               feature: requestedFeature,
-            })
+            }),
           );
           // next() must NOT be called
           expect(next).not.toHaveBeenCalled();
-        }
+        },
       ),
       { numRuns: 200 },
     );
@@ -161,7 +161,7 @@ describe('Property 29: Entitlement Enforcement', () => {
           expect(next).toHaveBeenCalled();
           // No error status should be set
           expect(res.status).not.toHaveBeenCalled();
-        }
+        },
       ),
       { numRuns: 200 },
     );

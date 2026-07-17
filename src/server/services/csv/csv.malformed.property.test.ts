@@ -25,14 +25,20 @@ describe('Property 23: CSV Malformed File Rejection', () => {
   const malformedCsvWithUnclosedQuoteArb = fc
     .tuple(
       // Some content before the unclosed quote
-      fc.string({ minLength: 0, maxLength: 20 }).filter((s) => !s.includes('"') && !s.includes('\n')),
+      fc
+        .string({ minLength: 0, maxLength: 20 })
+        .filter((s) => !s.includes('"') && !s.includes('\n')),
       // Some content after the unclosed quote (no closing quote, no newlines)
-      fc.string({ minLength: 1, maxLength: 30 }).filter((s) => !s.includes('"') && !s.includes('\n')),
+      fc
+        .string({ minLength: 1, maxLength: 30 })
+        .filter((s) => !s.includes('"') && !s.includes('\n')),
       // Optional extra columns in the header to add variety
       fc.array(
-        fc.string({ minLength: 1, maxLength: 10 }).filter(
-          (s) => !s.includes(',') && !s.includes('\n') && !s.includes('"') && s.trim().length > 0
-        ),
+        fc
+          .string({ minLength: 1, maxLength: 10 })
+          .filter(
+            (s) => !s.includes(',') && !s.includes('\n') && !s.includes('"') && s.trim().length > 0,
+          ),
         { minLength: 0, maxLength: 3 },
       ),
     )
@@ -50,15 +56,17 @@ describe('Property 23: CSV Malformed File Rejection', () => {
       fc.integer({ min: 0, max: 3 }),
       // Valid content for preceding rows
       fc.array(
-        fc.string({ minLength: 1, maxLength: 20 }).filter(
-          (s) => !s.includes(',') && !s.includes('\n') && !s.includes('"') && s.trim().length > 0
-        ),
+        fc
+          .string({ minLength: 1, maxLength: 20 })
+          .filter(
+            (s) => !s.includes(',') && !s.includes('\n') && !s.includes('"') && s.trim().length > 0,
+          ),
         { minLength: 0, maxLength: 3 },
       ),
       // Content with an unclosed quote
-      fc.string({ minLength: 1, maxLength: 20 }).filter(
-        (s) => !s.includes('"') && !s.includes('\n') && !s.includes(','),
-      ),
+      fc
+        .string({ minLength: 1, maxLength: 20 })
+        .filter((s) => !s.includes('"') && !s.includes('\n') && !s.includes(',')),
     )
     .map(([_validRowCount, validContents, afterQuote]) => {
       const header = 'content';
@@ -132,10 +140,10 @@ describe('Property 23: CSV Malformed File Rejection', () => {
           const err = error as Error;
           // The importCsv wraps parse errors with "Malformed CSV: ... (at line X)"
           // Check that line info is present
-          const hasLineInfo =
-            /line\s+\d+/i.test(err.message) || /at\s+line/i.test(err.message);
+          const hasLineInfo = /line\s+\d+/i.test(err.message) || /at\s+line/i.test(err.message);
           // Either has line info OR has the raw csv-parse message about quotes
-          const hasUsefulInfo = hasLineInfo ||
+          const hasUsefulInfo =
+            hasLineInfo ||
             err.message.toLowerCase().includes('quote') ||
             err.message.toLowerCase().includes('malformed');
           expect(hasUsefulInfo).toBe(true);

@@ -124,22 +124,22 @@ describe('Property 9: Unauthorized access rejection without credential leakage',
   }));
 
   // Generate Twilio credential payloads
-  const twilioPayloadArb = fc.tuple(credentialValueArb, credentialValueArb, credentialValueArb).map(
-    ([accountSid, authToken, phoneNumber]) => ({
+  const twilioPayloadArb = fc
+    .tuple(credentialValueArb, credentialValueArb, credentialValueArb)
+    .map(([accountSid, authToken, phoneNumber]) => ({
       provider: 'twilio' as const,
       body: { accountSid, authToken, phoneNumber },
       values: [accountSid, authToken, phoneNumber],
-    })
-  );
+    }));
 
   // Generate Stripe credential payloads
-  const stripePayloadArb = fc.tuple(credentialValueArb, credentialValueArb).map(
-    ([secretKey, webhookSecret]) => ({
+  const stripePayloadArb = fc
+    .tuple(credentialValueArb, credentialValueArb)
+    .map(([secretKey, webhookSecret]) => ({
       provider: 'stripe' as const,
       body: { secretKey, webhookSecret },
       values: [secretKey, webhookSecret],
-    })
-  );
+    }));
 
   // Combined provider payload generator
   const credentialPayloadArb = fc.oneof(openaiPayloadArb, twilioPayloadArb, stripePayloadArb);
@@ -211,9 +211,7 @@ describe('Property 9: Unauthorized access rejection without credential leakage',
 
       await fc.assert(
         fc.asyncProperty(credentialPayloadArb, async ({ provider, body, values }) => {
-          const response = await request(app)
-            .post(`/api/admin/credentials/${provider}`)
-            .send(body);
+          const response = await request(app).post(`/api/admin/credentials/${provider}`).send(body);
 
           // Must reject with 401
           expect(response.status).toBe(401);
@@ -232,8 +230,7 @@ describe('Property 9: Unauthorized access rejection without credential leakage',
       const app = createUnauthenticatedApp();
 
       // For GET, there's no body with credentials, but we verify no credential data in response
-      const response = await request(app)
-        .get('/api/admin/credentials/status');
+      const response = await request(app).get('/api/admin/credentials/status');
 
       expect(response.status).toBe(401);
       expect(response.body).not.toHaveProperty('providers');
@@ -248,9 +245,7 @@ describe('Property 9: Unauthorized access rejection without credential leakage',
 
       await fc.assert(
         fc.asyncProperty(credentialPayloadArb, async ({ provider, body, values }) => {
-          const response = await request(app)
-            .post(`/api/admin/credentials/${provider}`)
-            .send(body);
+          const response = await request(app).post(`/api/admin/credentials/${provider}`).send(body);
 
           // Must reject with 403
           expect(response.status).toBe(403);
@@ -268,8 +263,7 @@ describe('Property 9: Unauthorized access rejection without credential leakage',
     it('GET /credentials/status without permission returns 403 and does not leak credential data', async () => {
       const app = createNoPermissionApp();
 
-      const response = await request(app)
-        .get('/api/admin/credentials/status');
+      const response = await request(app).get('/api/admin/credentials/status');
 
       expect(response.status).toBe(403);
       expect(response.body).not.toHaveProperty('providers');

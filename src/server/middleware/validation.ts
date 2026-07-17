@@ -23,11 +23,7 @@ const VALID_CONTENT_TYPES = [
  * Middleware that checks validation results and returns 400 if invalid.
  * Place after any validation chain.
  */
-export function handleValidationErrors(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function handleValidationErrors(req: Request, res: Response, next: NextFunction): void {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
@@ -99,9 +95,7 @@ export const validateContentType = [
     .optional()
     .trim()
     .isIn(VALID_CONTENT_TYPES)
-    .withMessage(
-      `Content type must be one of: ${VALID_CONTENT_TYPES.join(', ')}`
-    ),
+    .withMessage(`Content type must be one of: ${VALID_CONTENT_TYPES.join(', ')}`),
 ];
 
 /**
@@ -111,10 +105,7 @@ export const validateContentType = [
 export const validateItemCreation = [
   ...validateTextContent,
   ...validateContentType,
-  body('metadata')
-    .optional()
-    .isObject()
-    .withMessage('Metadata must be a JSON object'),
+  body('metadata').optional().isObject().withMessage('Metadata must be a JSON object'),
 ];
 
 /**

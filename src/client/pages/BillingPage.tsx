@@ -82,73 +82,83 @@ export function BillingPage() {
     fetchBillingData();
   }, [getAuthHeaders]);
 
-  const handleUpgrade = useCallback(async (planId: string) => {
-    setActionLoading(true);
-    setError(null);
-    setSuccessMessage(null);
+  const handleUpgrade = useCallback(
+    async (planId: string) => {
+      setActionLoading(true);
+      setError(null);
+      setSuccessMessage(null);
 
-    try {
-      const headers = getAuthHeaders();
-      const response = await fetch('/api/billing/upgrade', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ planId }),
-      });
+      try {
+        const headers = getAuthHeaders();
+        const response = await fetch('/api/billing/upgrade', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ planId }),
+        });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Upgrade failed');
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Upgrade failed');
+        }
+
+        const data = await response.json();
+
+        // If Stripe checkout URL is returned, redirect to it
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+
+        setSubscription(data.subscription);
+        setSuccessMessage(`Successfully upgraded to ${data.subscription?.planName || planId}!`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Upgrade failed. Please try again.');
+      } finally {
+        setActionLoading(false);
       }
+    },
+    [getAuthHeaders],
+  );
 
-      const data = await response.json();
+  const handleDowngrade = useCallback(
+    async (planId: string) => {
+      setActionLoading(true);
+      setError(null);
+      setSuccessMessage(null);
 
-      // If Stripe checkout URL is returned, redirect to it
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-        return;
+      try {
+        const headers = getAuthHeaders();
+        const response = await fetch('/api/billing/downgrade', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ planId }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Downgrade failed');
+        }
+
+        const data = await response.json();
+        setSubscription(data.subscription);
+        setSuccessMessage(
+          `Plan will downgrade to ${data.subscription?.planName || planId} at the end of your billing period.`,
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Downgrade failed. Please try again.');
+      } finally {
+        setActionLoading(false);
       }
-
-      setSubscription(data.subscription);
-      setSuccessMessage(`Successfully upgraded to ${data.subscription?.planName || planId}!`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upgrade failed. Please try again.');
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getAuthHeaders]);
-
-  const handleDowngrade = useCallback(async (planId: string) => {
-    setActionLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      const headers = getAuthHeaders();
-      const response = await fetch('/api/billing/downgrade', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ planId }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Downgrade failed');
-      }
-
-      const data = await response.json();
-      setSubscription(data.subscription);
-      setSuccessMessage(
-        `Plan will downgrade to ${data.subscription?.planName || planId} at the end of your billing period.`
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Downgrade failed. Please try again.');
-    } finally {
-      setActionLoading(false);
-    }
-  }, [getAuthHeaders]);
+    },
+    [getAuthHeaders],
+  );
 
   const handleCancel = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to cancel your subscription? You will retain access until the end of your current billing period.',
+      )
+    ) {
       return;
     }
 
@@ -170,7 +180,9 @@ export function BillingPage() {
 
       const data = await response.json();
       setSubscription(data.subscription);
-      setSuccessMessage('Subscription canceled. You will retain access until the end of your billing period.');
+      setSuccessMessage(
+        'Subscription canceled. You will retain access until the end of your billing period.',
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cancellation failed. Please try again.');
     } finally {
@@ -192,7 +204,9 @@ export function BillingPage() {
     <div className="billing-page">
       <header className="billing-page__header">
         <div className="billing-page__header-left">
-          <a href="/" className="billing-page__back">← Back to Dashboard</a>
+          <a href="/" className="billing-page__back">
+            ← Back to Dashboard
+          </a>
           <h1>Billing & Subscription</h1>
         </div>
         <div className="billing-page__header-right">
@@ -223,9 +237,13 @@ export function BillingPage() {
             <div className="billing-current-plan">
               <div className="billing-current-plan__info">
                 <span className="billing-current-plan__name">{subscription.planName}</span>
-                <span className={`billing-current-plan__status billing-current-plan__status--${subscription.status}`}>
+                <span
+                  className={`billing-current-plan__status billing-current-plan__status--${subscription.status}`}
+                >
                   {subscription.status === 'active' && !subscription.cancelAtPeriodEnd && 'Active'}
-                  {subscription.status === 'active' && subscription.cancelAtPeriodEnd && 'Cancels at period end'}
+                  {subscription.status === 'active' &&
+                    subscription.cancelAtPeriodEnd &&
+                    'Cancels at period end'}
                   {subscription.status === 'canceled' && 'Canceled'}
                   {subscription.status === 'past_due' && 'Past Due'}
                   {subscription.status === 'trialing' && 'Trial'}
@@ -233,19 +251,22 @@ export function BillingPage() {
               </div>
               {subscription.currentPeriodEnd && (
                 <p className="billing-current-plan__period">
-                  Current period ends: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                  Current period ends:{' '}
+                  {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                 </p>
               )}
-              {subscription.status === 'active' && !subscription.cancelAtPeriodEnd && subscription.planId !== 'free' && (
-                <button
-                  className="btn-danger"
-                  onClick={handleCancel}
-                  disabled={actionLoading}
-                  aria-label="Cancel subscription"
-                >
-                  {actionLoading ? 'Processing...' : 'Cancel Subscription'}
-                </button>
-              )}
+              {subscription.status === 'active' &&
+                !subscription.cancelAtPeriodEnd &&
+                subscription.planId !== 'free' && (
+                  <button
+                    className="btn-danger"
+                    onClick={handleCancel}
+                    disabled={actionLoading}
+                    aria-label="Cancel subscription"
+                  >
+                    {actionLoading ? 'Processing...' : 'Cancel Subscription'}
+                  </button>
+                )}
             </div>
           ) : (
             <p className="text-muted">No active subscription. Choose a plan below.</p>
@@ -255,14 +276,18 @@ export function BillingPage() {
         {/* Usage Meters */}
         {usage && (
           <section className="billing-section" aria-labelledby="usage-heading">
-            <h2 id="usage-heading" className="visually-hidden">Usage</h2>
+            <h2 id="usage-heading" className="visually-hidden">
+              Usage
+            </h2>
             <UsageMeter usage={usage} />
           </section>
         )}
 
         {/* Plan Comparison */}
         <section className="billing-section" aria-labelledby="plans-heading">
-          <h2 id="plans-heading" className="visually-hidden">Plans</h2>
+          <h2 id="plans-heading" className="visually-hidden">
+            Plans
+          </h2>
           <PlanSelector
             plans={plans.length > 0 ? plans : undefined!}
             currentPlanId={subscription?.planId || 'free'}
@@ -293,7 +318,9 @@ export function BillingPage() {
                       <td>{payment.description}</td>
                       <td>{formatCurrency(payment.amount, payment.currency)}</td>
                       <td>
-                        <span className={`billing-history__status billing-history__status--${payment.status}`}>
+                        <span
+                          className={`billing-history__status billing-history__status--${payment.status}`}
+                        >
                           {payment.status}
                         </span>
                       </td>

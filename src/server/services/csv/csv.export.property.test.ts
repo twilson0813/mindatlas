@@ -17,31 +17,51 @@ describe('Property 25: CSV Export Completeness', () => {
   const ITEMS_COLUMNS = ['content', 'content_type', 'tags', 'creation_date', 'metadata'];
 
   // Maps export columns (matching exportMaps service)
-  const MAPS_COLUMNS = ['source_item_id', 'target_item_id', 'relationship_type', 'confidence_score'];
+  const MAPS_COLUMNS = [
+    'source_item_id',
+    'target_item_id',
+    'relationship_type',
+    'confidence_score',
+  ];
 
   // Generator for content_type values
   const contentTypeArb = fc.constantFrom(
-    'plain_text', 'link', 'code_snippet', 'note', 'task', 'idea', 'file', 'custom',
+    'plain_text',
+    'link',
+    'code_snippet',
+    'note',
+    'task',
+    'idea',
+    'file',
+    'custom',
   );
 
   // Generator for tags (comma-separated list)
-  const tagsArb = fc.array(
-    fc.string({ minLength: 1, maxLength: 20 }).filter((s) => !s.includes(',') && s.trim().length > 0),
-    { minLength: 0, maxLength: 5 },
-  ).map((tags) => tags.join(','));
+  const tagsArb = fc
+    .array(
+      fc
+        .string({ minLength: 1, maxLength: 20 })
+        .filter((s) => !s.includes(',') && s.trim().length > 0),
+      { minLength: 0, maxLength: 5 },
+    )
+    .map((tags) => tags.join(','));
 
   // Generator for ISO date strings
-  const dateArb = fc.date({
-    min: new Date('2020-01-01T00:00:00Z'),
-    max: new Date('2030-12-31T23:59:59Z'),
-  }).map((d) => d.toISOString());
+  const dateArb = fc
+    .date({
+      min: new Date('2020-01-01T00:00:00Z'),
+      max: new Date('2030-12-31T23:59:59Z'),
+    })
+    .map((d) => d.toISOString());
 
   // Generator for metadata JSON strings
   const metadataArb = fc.oneof(
     fc.constant(''),
-    fc.record({
-      priority: fc.constantFrom('low', 'medium', 'high'),
-    }).map((obj) => JSON.stringify(obj)),
+    fc
+      .record({
+        priority: fc.constantFrom('low', 'medium', 'high'),
+      })
+      .map((obj) => JSON.stringify(obj)),
   );
 
   // Generator for item-like row objects (mimics what exportItems produces)
@@ -55,12 +75,16 @@ describe('Property 25: CSV Export Completeness', () => {
 
   // Generator for relationship type values
   const relationshipTypeArb = fc.constantFrom(
-    'related', 'similar', 'parent', 'child', 'references', 'contradicts',
+    'related',
+    'similar',
+    'parent',
+    'child',
+    'references',
+    'contradicts',
   );
 
   // Generator for confidence score (strength)
-  const confidenceScoreArb = fc.float({ min: 0, max: 1, noNaN: true })
-    .map((v) => String(v));
+  const confidenceScoreArb = fc.float({ min: 0, max: 1, noNaN: true }).map((v) => String(v));
 
   // Generator for UUID-like IDs
   const uuidArb = fc.uuid();
@@ -78,47 +102,41 @@ describe('Property 25: CSV Export Completeness', () => {
   describe('Items export completeness', () => {
     it('should produce exactly N data rows + 1 header row for N items', () => {
       fc.assert(
-        fc.property(
-          fc.array(itemRowArb, { minLength: 1, maxLength: 50 }),
-          (items) => {
-            // Serialize using csv-stringify with header (same as service)
-            const csv = stringify(items, {
-              header: true,
-              columns: ITEMS_COLUMNS,
-            });
+        fc.property(fc.array(itemRowArb, { minLength: 1, maxLength: 50 }), (items) => {
+          // Serialize using csv-stringify with header (same as service)
+          const csv = stringify(items, {
+            header: true,
+            columns: ITEMS_COLUMNS,
+          });
 
-            // Split into lines and filter empty trailing lines
-            const lines = csv.split('\n').filter((line) => line.length > 0);
+          // Split into lines and filter empty trailing lines
+          const lines = csv.split('\n').filter((line) => line.length > 0);
 
-            // Should have exactly N + 1 lines (header + data rows)
-            expect(lines.length).toBe(items.length + 1);
-          },
-        ),
+          // Should have exactly N + 1 lines (header + data rows)
+          expect(lines.length).toBe(items.length + 1);
+        }),
         { numRuns: 200 },
       );
     });
 
     it('should have the correct header columns for items export', () => {
       fc.assert(
-        fc.property(
-          fc.array(itemRowArb, { minLength: 1, maxLength: 50 }),
-          (items) => {
-            const csv = stringify(items, {
-              header: true,
-              columns: ITEMS_COLUMNS,
-            });
+        fc.property(fc.array(itemRowArb, { minLength: 1, maxLength: 50 }), (items) => {
+          const csv = stringify(items, {
+            header: true,
+            columns: ITEMS_COLUMNS,
+          });
 
-            // Parse back with columns to verify header
-            const records = parse(csv, { columns: true }) as Record<string, string>[];
+          // Parse back with columns to verify header
+          const records = parse(csv, { columns: true }) as Record<string, string>[];
 
-            // Verify we get N records back
-            expect(records.length).toBe(items.length);
+          // Verify we get N records back
+          expect(records.length).toBe(items.length);
 
-            // Verify header columns by checking keys of first record
-            const headerKeys = Object.keys(records[0]);
-            expect(headerKeys).toEqual(ITEMS_COLUMNS);
-          },
-        ),
+          // Verify header columns by checking keys of first record
+          const headerKeys = Object.keys(records[0]);
+          expect(headerKeys).toEqual(ITEMS_COLUMNS);
+        }),
         { numRuns: 200 },
       );
     });
@@ -204,26 +222,23 @@ describe('Property 25: CSV Export Completeness', () => {
   describe('Export data fidelity', () => {
     it('should preserve all item data through CSV serialization and parsing', () => {
       fc.assert(
-        fc.property(
-          fc.array(itemRowArb, { minLength: 1, maxLength: 50 }),
-          (items) => {
-            const csv = stringify(items, {
-              header: true,
-              columns: ITEMS_COLUMNS,
-            });
+        fc.property(fc.array(itemRowArb, { minLength: 1, maxLength: 50 }), (items) => {
+          const csv = stringify(items, {
+            header: true,
+            columns: ITEMS_COLUMNS,
+          });
 
-            const records = parse(csv, { columns: true }) as Record<string, string>[];
+          const records = parse(csv, { columns: true }) as Record<string, string>[];
 
-            // Each item should be faithfully represented
-            for (let i = 0; i < items.length; i++) {
-              expect(records[i].content).toBe(items[i].content);
-              expect(records[i].content_type).toBe(items[i].content_type);
-              expect(records[i].tags).toBe(items[i].tags);
-              expect(records[i].creation_date).toBe(items[i].creation_date);
-              expect(records[i].metadata).toBe(items[i].metadata);
-            }
-          },
-        ),
+          // Each item should be faithfully represented
+          for (let i = 0; i < items.length; i++) {
+            expect(records[i].content).toBe(items[i].content);
+            expect(records[i].content_type).toBe(items[i].content_type);
+            expect(records[i].tags).toBe(items[i].tags);
+            expect(records[i].creation_date).toBe(items[i].creation_date);
+            expect(records[i].metadata).toBe(items[i].metadata);
+          }
+        }),
         { numRuns: 200 },
       );
     });

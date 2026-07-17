@@ -38,14 +38,13 @@ describe('Property 20: CSV Row Creation Count', () => {
   }));
 
   // Generator for a mix of populated and empty rows
-  const mixedRowsArb = fc
-    .array(
-      fc.oneof(
-        populatedRowArb.map((row) => ({ row, expectParsed: true })),
-        emptyRowArb.map((row) => ({ row, expectParsed: false })),
-      ),
-      { minLength: 1, maxLength: 50 },
-    );
+  const mixedRowsArb = fc.array(
+    fc.oneof(
+      populatedRowArb.map((row) => ({ row, expectParsed: true })),
+      emptyRowArb.map((row) => ({ row, expectParsed: false })),
+    ),
+    { minLength: 1, maxLength: 50 },
+  );
 
   it('should satisfy: parsed_count + skipped_count = total_rows', () => {
     fc.assert(
@@ -98,24 +97,24 @@ describe('Property 20: CSV Row Creation Count', () => {
   it('should produce M items created and (N-M) skipped for N rows with M non-empty content', () => {
     // Generate specific counts of populated and empty rows
     const countedRowsArb = fc
-      .tuple(
-        fc.integer({ min: 0, max: 30 }),
-        fc.integer({ min: 0, max: 30 }),
-      )
+      .tuple(fc.integer({ min: 0, max: 30 }), fc.integer({ min: 0, max: 30 }))
       .filter(([populated, empty]) => populated + empty > 0)
       .chain(([populatedCount, emptyCount]) =>
-        fc.tuple(
-          fc.array(populatedRowArb, { minLength: populatedCount, maxLength: populatedCount }),
-          fc.array(emptyRowArb, { minLength: emptyCount, maxLength: emptyCount }),
-        ).map(([populatedRows, emptyRows]) => ({
-          populatedCount,
-          emptyCount,
-          // Shuffle populated and empty rows together
-          allRows: [...populatedRows, ...emptyRows],
-        })),
+        fc
+          .tuple(
+            fc.array(populatedRowArb, { minLength: populatedCount, maxLength: populatedCount }),
+            fc.array(emptyRowArb, { minLength: emptyCount, maxLength: emptyCount }),
+          )
+          .map(([populatedRows, emptyRows]) => ({
+            populatedCount,
+            emptyCount,
+            // Shuffle populated and empty rows together
+            allRows: [...populatedRows, ...emptyRows],
+          })),
       )
       .chain(({ populatedCount, emptyCount, allRows }) =>
-        fc.shuffledSubarray(allRows, { minLength: allRows.length, maxLength: allRows.length })
+        fc
+          .shuffledSubarray(allRows, { minLength: allRows.length, maxLength: allRows.length })
           .map((shuffled) => ({
             rows: shuffled,
             expectedCreated: populatedCount,

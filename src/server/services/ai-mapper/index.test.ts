@@ -21,7 +21,11 @@ vi.mock('../../db/db.js', () => ({
   queryOne: vi.fn().mockResolvedValue(null),
   queryMany: vi.fn().mockResolvedValue([]),
   withTransaction: vi.fn(async (fn: (...args: unknown[]) => unknown) => {
-    const mockTxQuery = vi.fn().mockResolvedValue({ rows: [{ id: 'mock-id', name: 'mock', color: '#000', category_id: 'cat-1' }] });
+    const mockTxQuery = vi
+      .fn()
+      .mockResolvedValue({
+        rows: [{ id: 'mock-id', name: 'mock', color: '#000', category_id: 'cat-1' }],
+      });
     return fn(mockTxQuery);
   }),
 }));
@@ -136,9 +140,7 @@ describe('AI Mapper Service', () => {
           { name: 'tech', confidence: 1.5 },
           { name: 'other', confidence: -0.3 },
         ],
-        tags: [
-          { name: 'ai', categoryName: 'tech', confidence: 2.0 },
-        ],
+        tags: [{ name: 'ai', categoryName: 'tech', confidence: 2.0 }],
       });
 
       setOpenAIClient(createMockOpenAIClient(mockResponse));
@@ -298,11 +300,35 @@ describe('AI Mapper Service', () => {
       // First call: items, second call: relationships
       vi.mocked(queryMany)
         .mockResolvedValueOnce([
-          { id: 'item-1', user_id: 'user-1', title: 'Item 1', content_encrypted: 'encrypted:content1', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
-          { id: 'item-2', user_id: 'user-1', title: 'Item 2', content_encrypted: 'encrypted:content2', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+          {
+            id: 'item-1',
+            user_id: 'user-1',
+            title: 'Item 1',
+            content_encrypted: 'encrypted:content1',
+            content_type: 'note',
+            metadata: null,
+            source_channel: 'api',
+            created_at: new Date(),
+          },
+          {
+            id: 'item-2',
+            user_id: 'user-1',
+            title: 'Item 2',
+            content_encrypted: 'encrypted:content2',
+            content_type: 'note',
+            metadata: null,
+            source_channel: 'api',
+            created_at: new Date(),
+          },
         ])
         .mockResolvedValueOnce([
-          { id: 'rel-1', source_item_id: 'item-1', target_item_id: 'item-2', relationship_type: 'related_to', strength: 0.8 },
+          {
+            id: 'rel-1',
+            source_item_id: 'item-1',
+            target_item_id: 'item-2',
+            relationship_type: 'related_to',
+            strength: 0.8,
+          },
         ]);
 
       vi.mocked(queryOne).mockResolvedValue({ id: 'map-1' });
@@ -338,14 +364,30 @@ describe('AI Mapper Service', () => {
     it('should return matching items and summary from natural language query', async () => {
       const { queryMany } = await import('../../db/db.js');
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-1', user_id: 'user-1', title: 'ML Notes', content_encrypted: 'encrypted:Machine learning basics', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
-        { id: 'item-2', user_id: 'user-1', title: 'Python Tips', content_encrypted: 'encrypted:Python programming tips', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-1',
+          user_id: 'user-1',
+          title: 'ML Notes',
+          content_encrypted: 'encrypted:Machine learning basics',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
+        {
+          id: 'item-2',
+          user_id: 'user-1',
+          title: 'Python Tips',
+          content_encrypted: 'encrypted:Python programming tips',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       const mockResponse = JSON.stringify({
-        relevantItems: [
-          { id: 'item-1', relevanceScore: 0.95 },
-        ],
+        relevantItems: [{ id: 'item-1', relevanceScore: 0.95 }],
         summary: 'Your ML Notes cover the basics of machine learning.',
       });
 
@@ -373,7 +415,16 @@ describe('AI Mapper Service', () => {
     it('should return error state when OpenAI fails', async () => {
       const { queryMany } = await import('../../db/db.js');
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-1', user_id: 'user-1', title: 'Test', content_encrypted: 'encrypted:test', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-1',
+          user_id: 'user-1',
+          title: 'Test',
+          content_encrypted: 'encrypted:test',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       setOpenAIClient(createFailingOpenAIClient(new Error('Timeout')));
@@ -387,7 +438,16 @@ describe('AI Mapper Service', () => {
     it('should filter out invalid item IDs from AI response', async () => {
       const { queryMany } = await import('../../db/db.js');
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-1', user_id: 'user-1', title: 'Test', content_encrypted: 'encrypted:content', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-1',
+          user_id: 'user-1',
+          title: 'Test',
+          content_encrypted: 'encrypted:content',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       const mockResponse = JSON.stringify({
@@ -425,12 +485,26 @@ describe('AI Mapper Service', () => {
       });
 
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-2', user_id: 'user-1', title: 'Related Note', content_encrypted: 'encrypted:AI related content', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-2',
+          user_id: 'user-1',
+          title: 'Related Note',
+          content_encrypted: 'encrypted:AI related content',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       const mockResponse = JSON.stringify({
         suggestions: [
-          { itemId: 'item-2', relationshipType: 'similar_topic', strength: 0.85, recommendedAction: 'Merge these notes' },
+          {
+            itemId: 'item-2',
+            relationshipType: 'similar_topic',
+            strength: 0.85,
+            recommendedAction: 'Merge these notes',
+          },
         ],
       });
 
@@ -494,7 +568,16 @@ describe('AI Mapper Service', () => {
       });
 
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-2', user_id: 'user-1', title: 'Other', content_encrypted: 'encrypted:other', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-2',
+          user_id: 'user-1',
+          title: 'Other',
+          content_encrypted: 'encrypted:other',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       setOpenAIClient(createFailingOpenAIClient(new Error('Network error')));
@@ -521,13 +604,32 @@ describe('AI Mapper Service', () => {
       });
 
       vi.mocked(queryMany).mockResolvedValue([
-        { id: 'item-2', user_id: 'user-1', title: 'Valid', content_encrypted: 'encrypted:valid', content_type: 'note', metadata: null, source_channel: 'api', created_at: new Date() },
+        {
+          id: 'item-2',
+          user_id: 'user-1',
+          title: 'Valid',
+          content_encrypted: 'encrypted:valid',
+          content_type: 'note',
+          metadata: null,
+          source_channel: 'api',
+          created_at: new Date(),
+        },
       ]);
 
       const mockResponse = JSON.stringify({
         suggestions: [
-          { itemId: 'item-2', relationshipType: 'related', strength: 0.8, recommendedAction: 'Link' },
-          { itemId: 'fake-id', relationshipType: 'related', strength: 0.7, recommendedAction: 'N/A' },
+          {
+            itemId: 'item-2',
+            relationshipType: 'related',
+            strength: 0.8,
+            recommendedAction: 'Link',
+          },
+          {
+            itemId: 'fake-id',
+            relationshipType: 'related',
+            strength: 0.7,
+            recommendedAction: 'N/A',
+          },
         ],
       });
 

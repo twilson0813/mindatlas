@@ -33,9 +33,13 @@ export function createApp() {
   const openapiPath = path.resolve(process.cwd(), 'docs/openapi.yaml');
   try {
     const swaggerDocument = YAML.load(openapiPath);
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-      swaggerOptions: { tryItOutEnabled: true },
-    }));
+    app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerDocument, {
+        swaggerOptions: { tryItOutEnabled: true },
+      }),
+    );
   } catch {
     // OpenAPI spec not found — skip Swagger UI in test environments
   }

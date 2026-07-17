@@ -17,9 +17,7 @@ describe('Property 13: Item Detail Completeness', () => {
   });
 
   // Generator for single-word alphanumeric strings (no spaces, no normalization issues)
-  const wordArb = fc
-    .stringMatching(/^[A-Za-z][A-Za-z0-9]{2,12}$/)
-    .filter((s) => s.length >= 3);
+  const wordArb = fc.stringMatching(/^[A-Za-z][A-Za-z0-9]{2,12}$/).filter((s) => s.length >= 3);
 
   // Generator for category names — single words to avoid whitespace normalization issues
   const categoryNameArb = wordArb;
@@ -33,7 +31,7 @@ describe('Property 13: Item Detail Completeness', () => {
     confidence: confidenceArb,
     color: fc.option(
       fc.hexaString({ minLength: 6, maxLength: 6 }).map((h) => `#${h}`),
-      { nil: undefined }
+      { nil: undefined },
     ),
   });
 
@@ -61,7 +59,9 @@ describe('Property 13: Item Detail Completeness', () => {
       content: contentArb,
       contentType: fc.constantFrom('note', 'link', 'code_snippet', 'task', 'idea', 'file'),
       sourceDomain: fc.option(fc.domain(), { nil: undefined }),
-      createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }).map((d) => d.toISOString()),
+      createdAt: fc
+        .date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') })
+        .map((d) => d.toISOString()),
       categories: fc.array(categoryArb, { minLength: 1, maxLength: 5 }),
       relatedItems: fc.array(relatedItemArb, { minLength: 1, maxLength: 5 }),
     })
@@ -82,7 +82,8 @@ describe('Property 13: Item Detail Completeness', () => {
         ...item.categories.map((c) => c.name.toLowerCase()),
         ...item.relatedItems.map((r) => r.title.toLowerCase()),
       ]);
-      if (allTextElements.size !== 1 + item.categories.length + item.relatedItems.length) return false;
+      if (allTextElements.size !== 1 + item.categories.length + item.relatedItems.length)
+        return false;
       return true;
     });
 
@@ -116,9 +117,7 @@ describe('Property 13: Item Detail Completeness', () => {
 
         // Every category name should appear with # prefix and confidence percentage
         for (const cat of item.categories) {
-          const badge = categoriesSection!.querySelector(
-            `.item-detail__category-badge`
-          );
+          const badge = categoriesSection!.querySelector(`.item-detail__category-badge`);
           // Check that category name exists somewhere in the categories section
           const sectionText = categoriesSection!.textContent || '';
           expect(sectionText).toContain(cat.name);

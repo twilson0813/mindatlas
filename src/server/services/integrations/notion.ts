@@ -1,5 +1,10 @@
 import { Client } from '@notionhq/client';
-import { getUserIntegration, setUserIntegration, deleteUserIntegration, getPlatformCredentials } from '../credentials/index.js';
+import {
+  getUserIntegration,
+  setUserIntegration,
+  deleteUserIntegration,
+  getPlatformCredentials,
+} from '../credentials/index.js';
 import { createItem, getItem } from '../items/index.js';
 import { createChildLogger } from '../../logger.js';
 import type { Item } from '../items/index.js';
@@ -76,13 +81,10 @@ export async function connectNotion(userId: string, code: string): Promise<Notio
     userId,
     'notion',
     { accessToken: tokenResponse.access_token },
-    { workspace_id: tokenResponse.workspace_id, workspace_name: tokenResponse.workspace_name }
+    { workspace_id: tokenResponse.workspace_id, workspace_name: tokenResponse.workspace_name },
   );
 
-  log.info(
-    { userId, workspaceId: tokenResponse.workspace_id },
-    'Notion workspace connected'
-  );
+  log.info({ userId, workspaceId: tokenResponse.workspace_id }, 'Notion workspace connected');
 
   return {
     workspace_id: tokenResponse.workspace_id,
@@ -103,7 +105,7 @@ export async function connectNotion(userId: string, code: string): Promise<Notio
  */
 export async function importFromNotion(
   userId: string,
-  pageIds: string[]
+  pageIds: string[],
 ): Promise<NotionImportResult> {
   if (!pageIds || !Array.isArray(pageIds) || pageIds.length === 0) {
     const error = new Error('At least one page ID is required') as Error & { statusCode?: number };
@@ -165,7 +167,7 @@ export async function importFromNotion(
  */
 export async function exportToNotion(
   userId: string,
-  itemIds: string[]
+  itemIds: string[],
 ): Promise<NotionExportResult> {
   if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
     const error = new Error('At least one item ID is required') as Error & { statusCode?: number };
@@ -217,7 +219,10 @@ export async function exportToNotion(
       createdPageIds.push(response.id);
       log.info({ userId, itemId, notionPageId: response.id }, 'Item exported to Notion');
     } catch (err) {
-      log.warn({ userId, itemId, error: (err as Error).message }, 'Failed to export item to Notion');
+      log.warn(
+        { userId, itemId, error: (err as Error).message },
+        'Failed to export item to Notion',
+      );
       // Continue exporting other items even if one fails
     }
   }
@@ -235,7 +240,9 @@ export async function getConnection(userId: string): Promise<NotionConnection> {
   const integration = await getUserIntegration(userId, 'notion');
 
   if (!integration) {
-    const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
+    const error = new Error('No Notion workspace connected. Please connect first.') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 404;
     throw error;
   }
@@ -274,21 +281,25 @@ export async function disconnectNotion(userId: string): Promise<void> {
 async function exchangeCodeForToken(code: string): Promise<NotionOAuthTokenResponse> {
   let notionOAuth: NotionOAuthConfig;
   try {
-    notionOAuth = await getPlatformCredentials('notion_oauth' as any) as unknown as NotionOAuthConfig;
+    notionOAuth = (await getPlatformCredentials(
+      'notion_oauth' as any,
+    )) as unknown as NotionOAuthConfig;
   } catch {
-    const error = new Error('Notion integration is not configured') as Error & { statusCode?: number };
+    const error = new Error('Notion integration is not configured') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 503;
     throw error;
   }
 
-  const credentials = Buffer.from(
-    `${notionOAuth.clientId}:${notionOAuth.clientSecret}`
-  ).toString('base64');
+  const credentials = Buffer.from(`${notionOAuth.clientId}:${notionOAuth.clientSecret}`).toString(
+    'base64',
+  );
 
   const response = await fetch('https://api.notion.com/v1/oauth/token', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${credentials}`,
+      Authorization: `Basic ${credentials}`,
       'Content-Type': 'application/json',
       'Notion-Version': '2022-06-28',
     },
@@ -302,7 +313,9 @@ async function exchangeCodeForToken(code: string): Promise<NotionOAuthTokenRespo
   if (!response.ok) {
     const errorBody = await response.text();
     log.error({ status: response.status, body: errorBody }, 'Notion OAuth token exchange failed');
-    const error = new Error('Failed to exchange authorization code with Notion') as Error & { statusCode?: number };
+    const error = new Error('Failed to exchange authorization code with Notion') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 502;
     throw error;
   }
@@ -319,7 +332,9 @@ async function getNotionClient(userId: string): Promise<Client> {
   const integration = await getUserIntegration(userId, 'notion');
 
   if (!integration) {
-    const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
+    const error = new Error('No Notion workspace connected. Please connect first.') as Error & {
+      statusCode?: number;
+    };
     error.statusCode = 404;
     throw error;
   }

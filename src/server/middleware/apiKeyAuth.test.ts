@@ -73,9 +73,7 @@ describe('authenticateApiKey middleware', () => {
     mockFindActiveKey.mockResolvedValue(null);
 
     const app = createTestApp(authenticateApiKey);
-    const response = await request(app)
-      .get('/test')
-      .set('X-API-Key', 'ma_invalid_key');
+    const response = await request(app).get('/test').set('X-API-Key', 'ma_invalid_key');
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('Invalid or revoked API key');
@@ -101,9 +99,7 @@ describe('authenticateApiKey middleware', () => {
     });
 
     const app = createTestApp(authenticateApiKey);
-    const response = await request(app)
-      .get('/test')
-      .set('X-API-Key', 'ma_validkey');
+    const response = await request(app).get('/test').set('X-API-Key', 'ma_validkey');
 
     expect(response.status).toBe(200);
     expect(response.body.user).toMatchObject({
@@ -136,9 +132,7 @@ describe('authenticateApiKey middleware', () => {
     });
 
     const app = createTestApp(authenticateApiKey);
-    const response = await request(app)
-      .get('/test')
-      .set('X-API-Key', 'ma_orphankey');
+    const response = await request(app).get('/test').set('X-API-Key', 'ma_orphankey');
 
     expect(response.status).toBe(401);
     expect(response.body.error).toBe('User not found');
@@ -177,9 +171,7 @@ describe('authenticateTokenOrApiKey middleware', () => {
     });
 
     const app = createTestApp(authenticateTokenOrApiKey as typeof authenticateApiKey);
-    const response = await request(app)
-      .get('/test')
-      .set('X-API-Key', 'ma_somekey');
+    const response = await request(app).get('/test').set('X-API-Key', 'ma_somekey');
 
     expect(response.status).toBe(200);
     expect(response.body.user.sub).toBe('user-abc');

@@ -17,7 +17,11 @@ export function getPoolConfig(): PoolConfig {
   };
 
   // Enable SSL for non-localhost database connections (e.g., Lightsail managed DB)
-  if (config.databaseUrl && !config.databaseUrl.includes('localhost') && !config.databaseUrl.includes('127.0.0.1')) {
+  if (
+    config.databaseUrl &&
+    !config.databaseUrl.includes('localhost') &&
+    !config.databaseUrl.includes('127.0.0.1')
+  ) {
     poolConfig.ssl = { rejectUnauthorized: false };
   }
 
@@ -36,7 +40,7 @@ export function getPool(): Pool {
  */
 export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ): Promise<QueryResult<T>> {
   const client = getPool();
   return client.query<T>(text, params);
@@ -47,7 +51,7 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
  */
 export async function queryOne<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ): Promise<T | null> {
   const result = await query<T>(text, params);
   return result.rows[0] ?? null;
@@ -58,7 +62,7 @@ export async function queryOne<T extends QueryResultRow = QueryResultRow>(
  */
 export async function queryMany<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ): Promise<T[]> {
   const result = await query<T>(text, params);
   return result.rows;
@@ -68,7 +72,7 @@ export async function queryMany<T extends QueryResultRow = QueryResultRow>(
  * Execute a query within a transaction.
  */
 export async function withTransaction<T>(
-  fn: (query: typeof transactionQuery) => Promise<T>
+  fn: (query: typeof transactionQuery) => Promise<T>,
 ): Promise<T> {
   const client = await getPool().connect();
   try {
@@ -76,7 +80,7 @@ export async function withTransaction<T>(
 
     const transactionQueryFn = async <R extends QueryResultRow = QueryResultRow>(
       text: string,
-      params?: unknown[]
+      params?: unknown[],
     ): Promise<QueryResult<R>> => {
       return client.query<R>(text, params);
     };
@@ -95,7 +99,7 @@ export async function withTransaction<T>(
 // Type helper for the transaction query function
 type TransactionQuery = <T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: unknown[]
+  params?: unknown[],
 ) => Promise<QueryResult<T>>;
 
 const transactionQuery: TransactionQuery = null as unknown as TransactionQuery;

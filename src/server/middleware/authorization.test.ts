@@ -16,10 +16,15 @@ import { queryOne } from '../db/db.js';
 
 const mockedQueryOne = vi.mocked(queryOne);
 
-function createMockRequest(params: Record<string, string> = {}, user?: { sub: string }): Partial<Request> {
+function createMockRequest(
+  params: Record<string, string> = {},
+  user?: { sub: string },
+): Partial<Request> {
   return {
     params: params as Request['params'],
-    user: user ? { sub: user.sub, email: 'test@example.com', role: 'user', iat: 0, exp: 0 } : undefined,
+    user: user
+      ? { sub: user.sub, email: 'test@example.com', role: 'user', iat: 0, exp: 0 }
+      : undefined,
   };
 }
 
@@ -57,10 +62,9 @@ describe('Authorization Middleware - requireOwnership', () => {
 
       await middleware(req, res, mockNext);
 
-      expect(mockedQueryOne).toHaveBeenCalledWith(
-        'SELECT user_id FROM items WHERE id = $1',
-        [itemId]
-      );
+      expect(mockedQueryOne).toHaveBeenCalledWith('SELECT user_id FROM items WHERE id = $1', [
+        itemId,
+      ]);
       expect(mockNext).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
@@ -74,7 +78,9 @@ describe('Authorization Middleware - requireOwnership', () => {
       await middleware(req, res, mockNext);
 
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Forbidden: You do not have access to this resource' });
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Forbidden: You do not have access to this resource',
+      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -142,10 +148,9 @@ describe('Authorization Middleware - requireOwnership', () => {
 
       await middleware(req, res, mockNext);
 
-      expect(mockedQueryOne).toHaveBeenCalledWith(
-        'SELECT user_id FROM maps WHERE id = $1',
-        [mapId]
-      );
+      expect(mockedQueryOne).toHaveBeenCalledWith('SELECT user_id FROM maps WHERE id = $1', [
+        mapId,
+      ]);
       expect(mockNext).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
     });
@@ -159,7 +164,9 @@ describe('Authorization Middleware - requireOwnership', () => {
       await middleware(req, res, mockNext);
 
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Forbidden: You do not have access to this resource' });
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Forbidden: You do not have access to this resource',
+      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 

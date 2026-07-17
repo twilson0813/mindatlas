@@ -77,16 +77,15 @@ describe('Notion Routes', () => {
       error.statusCode = 400;
       (connectNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
-      const res = await request(app)
-        .post('/api/integrations/notion/connect')
-        .send({})
-        .expect(400);
+      const res = await request(app).post('/api/integrations/notion/connect').send({}).expect(400);
 
       expect(res.body.error).toBe('Authorization code is required');
     });
 
     it('should return 502 when Notion rejects the code', async () => {
-      const error = new Error('Failed to exchange authorization code with Notion') as Error & { statusCode?: number };
+      const error = new Error('Failed to exchange authorization code with Notion') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 502;
       (connectNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
@@ -121,7 +120,9 @@ describe('Notion Routes', () => {
     });
 
     it('should return 400 when page_ids is empty', async () => {
-      const error = new Error('At least one page ID is required') as Error & { statusCode?: number };
+      const error = new Error('At least one page ID is required') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 400;
       (importFromNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
@@ -134,7 +135,9 @@ describe('Notion Routes', () => {
     });
 
     it('should return 404 when no Notion connection exists', async () => {
-      const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
+      const error = new Error('No Notion workspace connected. Please connect first.') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 404;
       (importFromNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
@@ -166,7 +169,9 @@ describe('Notion Routes', () => {
     });
 
     it('should return 400 when item_ids is empty', async () => {
-      const error = new Error('At least one item ID is required') as Error & { statusCode?: number };
+      const error = new Error('At least one item ID is required') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 400;
       (exportToNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
@@ -189,21 +194,19 @@ describe('Notion Routes', () => {
       };
       (getConnection as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockConnection);
 
-      const res = await request(app)
-        .get('/api/integrations/notion/status')
-        .expect(200);
+      const res = await request(app).get('/api/integrations/notion/status').expect(200);
 
       expect(res.body.workspace_id).toBe('ws-1');
     });
 
     it('should return 404 when not connected', async () => {
-      const error = new Error('No Notion workspace connected. Please connect first.') as Error & { statusCode?: number };
+      const error = new Error('No Notion workspace connected. Please connect first.') as Error & {
+        statusCode?: number;
+      };
       error.statusCode = 404;
       (getConnection as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
-      const res = await request(app)
-        .get('/api/integrations/notion/status')
-        .expect(404);
+      const res = await request(app).get('/api/integrations/notion/status').expect(404);
 
       expect(res.body.error).toContain('No Notion workspace connected');
     });
@@ -213,9 +216,7 @@ describe('Notion Routes', () => {
     it('should return 204 on successful disconnect', async () => {
       (disconnectNotion as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
-      await request(app)
-        .delete('/api/integrations/notion/disconnect')
-        .expect(204);
+      await request(app).delete('/api/integrations/notion/disconnect').expect(204);
 
       expect(disconnectNotion).toHaveBeenCalledWith('user-1');
     });
@@ -225,9 +226,7 @@ describe('Notion Routes', () => {
       error.statusCode = 404;
       (disconnectNotion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(error);
 
-      const res = await request(app)
-        .delete('/api/integrations/notion/disconnect')
-        .expect(404);
+      const res = await request(app).delete('/api/integrations/notion/disconnect').expect(404);
 
       expect(res.body.error).toBe('No Notion connection found');
     });

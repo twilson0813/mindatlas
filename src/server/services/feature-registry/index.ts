@@ -68,7 +68,7 @@ export function register(feature: FeatureDefinition): void {
 
   if (!validCategories.includes(feature.category)) {
     throw new Error(
-      `Invalid category '${feature.category}'. Must be one of: ${validCategories.join(', ')}`
+      `Invalid category '${feature.category}'. Must be one of: ${validCategories.join(', ')}`,
     );
   }
 
@@ -179,7 +179,7 @@ export async function syncToDatabase(): Promise<void> {
          description = EXCLUDED.description,
          category = EXCLUDED.category
        RETURNING id, key, name, description, category, created_at`,
-      [feature.key, feature.name, feature.description, feature.category]
+      [feature.key, feature.name, feature.description, feature.category],
     );
   }
 
@@ -192,7 +192,7 @@ export async function syncToDatabase(): Promise<void> {
  */
 export async function loadFromDatabase(): Promise<void> {
   const rows = await queryMany<FeatureRegistryRow>(
-    `SELECT id, key, name, description, category, created_at FROM feature_registry ORDER BY key`
+    `SELECT id, key, name, description, category, created_at FROM feature_registry ORDER BY key`,
   );
 
   for (const row of rows) {

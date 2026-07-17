@@ -34,7 +34,7 @@ export async function loadEntitlements(planId: string): Promise<string[]> {
   // Cache miss — load from database
   const rows = await queryMany<{ feature_key: string }>(
     `SELECT feature_key FROM plan_entitlements WHERE plan_id = $1 AND enabled = true`,
-    [planId]
+    [planId],
   );
 
   const features = rows.map((row) => row.feature_key);
@@ -82,7 +82,7 @@ export function requireEntitlement(featureKey: string): RequestHandler {
       // Look up user's plan — defaults to 'free' if no subscription found
       const subscription = await queryOne<{ plan_id: string }>(
         `SELECT plan_id FROM subscriptions WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
-        [userId]
+        [userId],
       );
 
       const planId = subscription?.plan_id ?? 'free';

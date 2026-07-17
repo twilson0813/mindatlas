@@ -33,10 +33,7 @@ import { requireAdmin, verifyTotp } from './adminAuth.js';
 
 const mockedQueryOne = vi.mocked(queryOne);
 
-function createMockRequest(
-  userId: string | undefined,
-  mfaToken?: string
-): Partial<Request> {
+function createMockRequest(userId: string | undefined, mfaToken?: string): Partial<Request> {
   const headers: Record<string, string | undefined> = {};
   if (mfaToken !== undefined) {
     headers['x-mfa-token'] = mfaToken;

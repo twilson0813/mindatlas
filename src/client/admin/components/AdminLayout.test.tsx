@@ -5,11 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
 
 function renderWithRouter(ui: React.ReactElement, { route = '/users' } = {}) {
-  return render(
-    <MemoryRouter initialEntries={[route]}>
-      {ui}
-    </MemoryRouter>
-  );
+  return render(<MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>);
 }
 
 describe('AdminLayout', () => {
@@ -17,7 +13,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Content</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     expect(screen.getByText('Admin Console')).toBeInTheDocument();
   });
@@ -26,7 +22,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Content</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     const nav = screen.getByLabelText('Admin navigation');
     expect(nav).toHaveTextContent('Users');
@@ -41,7 +37,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Test Content Area</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     expect(screen.getByText('Test Content Area')).toBeInTheDocument();
   });
@@ -50,7 +46,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Content</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     expect(screen.getByLabelText('Admin navigation')).toBeInTheDocument();
   });
@@ -59,7 +55,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Content</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     const backLink = screen.getByText('← Back to Dashboard');
     expect(backLink).toBeInTheDocument();
@@ -70,7 +66,7 @@ describe('AdminLayout', () => {
     renderWithRouter(
       <AdminLayout>
         <div>Content</div>
-      </AdminLayout>
+      </AdminLayout>,
     );
     const toggle = screen.getByLabelText('Toggle admin navigation');
     expect(toggle).toBeInTheDocument();

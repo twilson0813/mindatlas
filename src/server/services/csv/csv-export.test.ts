@@ -286,10 +286,9 @@ describe('CSV Export Service', () => {
 
       await exportMaps('user-456');
 
-      expect(queryMany).toHaveBeenCalledWith(
-        expect.stringContaining('src.user_id = $1'),
-        ['user-456']
-      );
+      expect(queryMany).toHaveBeenCalledWith(expect.stringContaining('src.user_id = $1'), [
+        'user-456',
+      ]);
     });
   });
 

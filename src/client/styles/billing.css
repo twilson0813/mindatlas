@@ -146,7 +146,9 @@
   font-weight: 500;
   font-size: var(--font-size-sm);
   cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-danger:hover {

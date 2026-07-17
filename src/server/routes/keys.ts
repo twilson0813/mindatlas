@@ -2,11 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { rateLimiter } from '../middleware/rateLimiter.js';
-import {
-  generateApiKey,
-  revokeApiKey,
-  listApiKeys,
-} from '../services/integrations/index.js';
+import { generateApiKey, revokeApiKey, listApiKeys } from '../services/integrations/index.js';
 
 const router = Router();
 

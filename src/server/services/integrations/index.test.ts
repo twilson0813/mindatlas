@@ -164,15 +164,15 @@ describe('integrations service', () => {
     });
 
     it('should reject payload with missing content', async () => {
-      await expect(
-        handleWebhook(userId, { content: '' })
-      ).rejects.toThrow('Webhook payload must include non-empty "content" field');
+      await expect(handleWebhook(userId, { content: '' })).rejects.toThrow(
+        'Webhook payload must include non-empty "content" field',
+      );
     });
 
     it('should reject payload with whitespace-only content', async () => {
-      await expect(
-        handleWebhook(userId, { content: '   ' })
-      ).rejects.toThrow('Webhook payload must include non-empty "content" field');
+      await expect(handleWebhook(userId, { content: '   ' })).rejects.toThrow(
+        'Webhook payload must include non-empty "content" field',
+      );
     });
 
     it('should set statusCode 400 on validation errors', async () => {
@@ -202,7 +202,7 @@ describe('integrations service', () => {
       // Verify the hash was stored, not the raw key
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO api_keys'),
-        expect.arrayContaining([userId, expect.stringMatching(/^[0-9a-f]{64}$/), 'My Integration'])
+        expect.arrayContaining([userId, expect.stringMatching(/^[0-9a-f]{64}$/), 'My Integration']),
       );
     });
 
@@ -213,7 +213,7 @@ describe('integrations service', () => {
 
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining([userId, expect.any(String), 'Trimmed Label'])
+        expect.arrayContaining([userId, expect.any(String), 'Trimmed Label']),
       );
     });
 
@@ -243,7 +243,7 @@ describe('integrations service', () => {
       await expect(revokeApiKey(userId, 'key-1')).resolves.toBeUndefined();
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE api_keys SET is_active = false'),
-        ['key-1', userId]
+        ['key-1', userId],
       );
     });
 
@@ -251,7 +251,7 @@ describe('integrations service', () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [], command: 'UPDATE', oid: 0, fields: [] });
 
       await expect(revokeApiKey(userId, 'nonexistent')).rejects.toThrow(
-        'API key not found or already revoked'
+        'API key not found or already revoked',
       );
     });
 
@@ -344,7 +344,7 @@ describe('integrations service', () => {
       await updateKeyLastUsed('key-1');
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE api_keys SET last_used_at'),
-        ['key-1']
+        ['key-1'],
       );
     });
   });

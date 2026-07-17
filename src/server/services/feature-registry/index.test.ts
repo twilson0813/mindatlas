@@ -55,7 +55,7 @@ describe('Feature Registry', () => {
           name: 'Test',
           description: 'Test',
           category: 'input_channels',
-        })
+        }),
       ).toThrow('Feature key is required');
     });
 
@@ -66,7 +66,7 @@ describe('Feature Registry', () => {
           name: '',
           description: 'Test',
           category: 'input_channels',
-        })
+        }),
       ).toThrow('Feature name is required');
     });
 
@@ -77,7 +77,7 @@ describe('Feature Registry', () => {
           name: 'Test',
           description: '',
           category: 'input_channels',
-        })
+        }),
       ).toThrow('Feature description is required');
     });
 
@@ -88,7 +88,7 @@ describe('Feature Registry', () => {
           name: 'Test',
           description: 'Test',
           category: 'invalid_category' as FeatureCategory,
-        })
+        }),
       ).toThrow("Invalid category 'invalid_category'");
     });
 

@@ -65,7 +65,9 @@
   cursor: pointer;
   font-size: 0.875rem;
   text-align: left;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .admin-nav-item:hover {

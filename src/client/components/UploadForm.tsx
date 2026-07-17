@@ -16,8 +16,19 @@ export function UploadForm({ onSubmit }: UploadFormProps) {
 
   const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
   const ALLOWED_EXTENSIONS = [
-    '.pdf', '.png', '.jpg', '.gif', '.txt', '.md',
-    '.csv', '.json', '.py', '.js', '.ts', '.html', '.css',
+    '.pdf',
+    '.png',
+    '.jpg',
+    '.gif',
+    '.txt',
+    '.md',
+    '.csv',
+    '.json',
+    '.py',
+    '.js',
+    '.ts',
+    '.html',
+    '.css',
   ];
 
   const validateFile = useCallback((f: File): string | null => {
@@ -31,15 +42,18 @@ export function UploadForm({ onSubmit }: UploadFormProps) {
     return null;
   }, []);
 
-  const handleFileSelect = useCallback((f: File) => {
-    const validationError = validateFile(f);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setFile(f);
-    setError(null);
-  }, [validateFile]);
+  const handleFileSelect = useCallback(
+    (f: File) => {
+      const validationError = validateFile(f);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      setFile(f);
+      setError(null);
+    },
+    [validateFile],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -51,61 +65,73 @@ export function UploadForm({ onSubmit }: UploadFormProps) {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  }, [handleFileSelect]);
-
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      handleFileSelect(selectedFile);
-    }
-  }, [handleFileSelect]);
-
-  const handleAddTag = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
       e.preventDefault();
-      const trimmed = tagInput.trim().replace(/^#/, '');
-      if (trimmed && !tags.includes(trimmed)) {
-        setTags((prev) => [...prev, trimmed]);
+      setIsDragOver(false);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile) {
+        handleFileSelect(droppedFile);
       }
-      setTagInput('');
-    }
-  }, [tagInput, tags]);
+    },
+    [handleFileSelect],
+  );
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (selectedFile) {
+        handleFileSelect(selectedFile);
+      }
+    },
+    [handleFileSelect],
+  );
+
+  const handleAddTag = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const trimmed = tagInput.trim().replace(/^#/, '');
+        if (trimmed && !tags.includes(trimmed)) {
+          setTags((prev) => [...prev, trimmed]);
+        }
+        setTagInput('');
+      }
+    },
+    [tagInput, tags],
+  );
 
   const handleRemoveTag = useCallback((tag: string) => {
     setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim() && !file) {
-      setError('Please enter text content or upload a file');
-      return;
-    }
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await onSubmit({
-        content: content.trim(),
-        file: file || undefined,
-        tags,
-      });
-      setContent('');
-      setFile(null);
-      setTags([]);
-      setTagInput('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [content, file, tags, onSubmit]);
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!content.trim() && !file) {
+        setError('Please enter text content or upload a file');
+        return;
+      }
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        await onSubmit({
+          content: content.trim(),
+          file: file || undefined,
+          tags,
+        });
+        setContent('');
+        setFile(null);
+        setTags([]);
+        setTagInput('');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Upload failed');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [content, file, tags, onSubmit],
+  );
 
   const handleRemoveFile = useCallback(() => {
     setFile(null);
@@ -152,9 +178,7 @@ export function UploadForm({ onSubmit }: UploadFormProps) {
           {file ? (
             <div className="drop-zone__file-info">
               <span className="drop-zone__filename">{file.name}</span>
-              <span className="drop-zone__filesize">
-                ({(file.size / 1024).toFixed(1)} KB)
-              </span>
+              <span className="drop-zone__filesize">({(file.size / 1024).toFixed(1)} KB)</span>
               <button
                 type="button"
                 className="drop-zone__remove"
@@ -169,7 +193,9 @@ export function UploadForm({ onSubmit }: UploadFormProps) {
             </div>
           ) : (
             <div className="drop-zone__prompt">
-              <span className="drop-zone__icon" aria-hidden="true">📁</span>
+              <span className="drop-zone__icon" aria-hidden="true">
+                📁
+              </span>
               <span>Drag &amp; drop a file here or click to browse</span>
               <span className="drop-zone__hint">
                 PDF, PNG, JPG, GIF, TXT, MD, CSV, JSON, code files — up to 25 MB

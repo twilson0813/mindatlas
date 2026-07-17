@@ -119,17 +119,19 @@ export function MetricsDashboard() {
           <MetricCard label="Free Tier" value={subscriptionMetrics?.freeCount ?? 0} />
           <MetricCard label="Pro Tier" value={subscriptionMetrics?.proCount ?? 0} />
           <MetricCard label="Enterprise Tier" value={subscriptionMetrics?.enterpriseCount ?? 0} />
-          <MetricCard
-            label="MRR"
-            value={`$${(subscriptionMetrics?.mrr ?? 0).toLocaleString()}`}
-          />
+          <MetricCard label="MRR" value={`$${(subscriptionMetrics?.mrr ?? 0).toLocaleString()}`} />
           <MetricCard
             label="Churn Rate"
             value={`${((subscriptionMetrics?.churnRate ?? 0) * 100).toFixed(1)}%`}
-            variant={subscriptionMetrics && subscriptionMetrics.churnRate > 0.05 ? 'warning' : 'default'}
+            variant={
+              subscriptionMetrics && subscriptionMetrics.churnRate > 0.05 ? 'warning' : 'default'
+            }
           />
           <MetricCard label="Upgrades (30d)" value={subscriptionMetrics?.upgradeCount30d ?? 0} />
-          <MetricCard label="Downgrades (30d)" value={subscriptionMetrics?.downgradeCount30d ?? 0} />
+          <MetricCard
+            label="Downgrades (30d)"
+            value={subscriptionMetrics?.downgradeCount30d ?? 0}
+          />
         </div>
       </section>
     </div>

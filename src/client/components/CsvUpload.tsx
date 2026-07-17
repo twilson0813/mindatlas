@@ -36,18 +36,21 @@ export function CsvUpload({ onImport, templateDownloadUrl = '/api/csv/template' 
     return null;
   }, []);
 
-  const handleFileSelect = useCallback((f: File) => {
-    const validationError = validateCsvFile(f);
-    if (validationError) {
-      setError(validationError);
-      setFile(null);
-      return;
-    }
-    setFile(f);
-    setError(null);
-    setResult(null);
-    setStatus('idle');
-  }, [validateCsvFile]);
+  const handleFileSelect = useCallback(
+    (f: File) => {
+      const validationError = validateCsvFile(f);
+      if (validationError) {
+        setError(validationError);
+        setFile(null);
+        return;
+      }
+      setFile(f);
+      setError(null);
+      setResult(null);
+      setStatus('idle');
+    },
+    [validateCsvFile],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -59,21 +62,27 @@ export function CsvUpload({ onImport, templateDownloadUrl = '/api/csv/template' 
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile) {
+        handleFileSelect(droppedFile);
+      }
+    },
+    [handleFileSelect],
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      handleFileSelect(selectedFile);
-    }
-  }, [handleFileSelect]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0];
+      if (selectedFile) {
+        handleFileSelect(selectedFile);
+      }
+    },
+    [handleFileSelect],
+  );
 
   const handleImport = useCallback(async () => {
     if (!file) return;
@@ -155,15 +164,17 @@ export function CsvUpload({ onImport, templateDownloadUrl = '/api/csv/template' 
       >
         {file ? (
           <div className="csv-drop-zone__file-info">
-            <span className="csv-drop-zone__icon" aria-hidden="true">📄</span>
-            <span className="csv-drop-zone__filename">{file.name}</span>
-            <span className="csv-drop-zone__filesize">
-              ({(file.size / 1024).toFixed(1)} KB)
+            <span className="csv-drop-zone__icon" aria-hidden="true">
+              📄
             </span>
+            <span className="csv-drop-zone__filename">{file.name}</span>
+            <span className="csv-drop-zone__filesize">({(file.size / 1024).toFixed(1)} KB)</span>
           </div>
         ) : (
           <div className="csv-drop-zone__prompt">
-            <span className="csv-drop-zone__icon" aria-hidden="true">📊</span>
+            <span className="csv-drop-zone__icon" aria-hidden="true">
+              📊
+            </span>
             <span>Drag &amp; drop a CSV file or click to browse</span>
             <span className="csv-drop-zone__hint">Max 10 MB, up to 5000 rows</span>
           </div>
@@ -180,12 +191,15 @@ export function CsvUpload({ onImport, templateDownloadUrl = '/api/csv/template' 
       />
 
       {status === 'uploading' && (
-        <div className="csv-progress" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+        <div
+          className="csv-progress"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <div className="csv-progress__bar">
-            <div
-              className="csv-progress__fill"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="csv-progress__fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="csv-progress__label">{progress}% — Importing...</span>
         </div>
@@ -227,21 +241,12 @@ export function CsvUpload({ onImport, templateDownloadUrl = '/api/csv/template' 
 
       <div className="csv-upload__actions">
         {file && status !== 'uploading' && status !== 'success' && (
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleImport}
-            disabled={!file}
-          >
+          <button type="button" className="btn-primary" onClick={handleImport} disabled={!file}>
             Import CSV
           </button>
         )}
         {(file || result) && status !== 'uploading' && (
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleReset}
-          >
+          <button type="button" className="btn-secondary" onClick={handleReset}>
             {status === 'success' ? 'Import Another' : 'Clear'}
           </button>
         )}

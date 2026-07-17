@@ -22,12 +22,38 @@ vi.mock('../../middleware/entitlement.js', () => ({
 
 vi.mock('../feature-registry/index.js', () => ({
   getAll: vi.fn().mockReturnValue([
-    { key: 'input.sms', name: 'SMS Input', description: 'SMS channel', category: 'input_channels', registeredAt: '2024-01-01T00:00:00.000Z' },
-    { key: 'input.api', name: 'API Input', description: 'API channel', category: 'input_channels', registeredAt: '2024-01-01T00:00:00.000Z' },
-    { key: 'ai.categorization', name: 'AI Categorization', description: 'AI tagging', category: 'ai_capabilities', registeredAt: '2024-01-01T00:00:00.000Z' },
-    { key: 'integration.notion', name: 'Notion', description: 'Notion sync', category: 'integrations', registeredAt: '2024-01-01T00:00:00.000Z' },
+    {
+      key: 'input.sms',
+      name: 'SMS Input',
+      description: 'SMS channel',
+      category: 'input_channels',
+      registeredAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      key: 'input.api',
+      name: 'API Input',
+      description: 'API channel',
+      category: 'input_channels',
+      registeredAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      key: 'ai.categorization',
+      name: 'AI Categorization',
+      description: 'AI tagging',
+      category: 'ai_capabilities',
+      registeredAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      key: 'integration.notion',
+      name: 'Notion',
+      description: 'Notion sync',
+      category: 'integrations',
+      registeredAt: '2024-01-01T00:00:00.000Z',
+    },
   ]),
-  isRegistered: vi.fn((key: string) => ['input.sms', 'input.api', 'ai.categorization', 'integration.notion'].includes(key)),
+  isRegistered: vi.fn((key: string) =>
+    ['input.sms', 'input.api', 'ai.categorization', 'integration.notion'].includes(key),
+  ),
 }));
 
 vi.mock('../../logger.js', () => ({
@@ -94,28 +120,33 @@ describe('Admin Service - Plan and Entitlement Management', () => {
     });
 
     it('should throw if plan name is empty', async () => {
-      await expect(createPlan('admin-1', { ...validPlanInput, name: '' }))
-        .rejects.toThrow('Plan name is required');
+      await expect(createPlan('admin-1', { ...validPlanInput, name: '' })).rejects.toThrow(
+        'Plan name is required',
+      );
     });
 
     it('should throw if display name is empty', async () => {
-      await expect(createPlan('admin-1', { ...validPlanInput, displayName: '' }))
-        .rejects.toThrow('Plan display name is required');
+      await expect(createPlan('admin-1', { ...validPlanInput, displayName: '' })).rejects.toThrow(
+        'Plan display name is required',
+      );
     });
 
     it('should throw if price is negative', async () => {
-      await expect(createPlan('admin-1', { ...validPlanInput, priceMonthyCents: -100 }))
-        .rejects.toThrow('Price must be a non-negative number');
+      await expect(
+        createPlan('admin-1', { ...validPlanInput, priceMonthyCents: -100 }),
+      ).rejects.toThrow('Price must be a non-negative number');
     });
 
     it('should throw if storage limit is zero or negative', async () => {
-      await expect(createPlan('admin-1', { ...validPlanInput, storageLimitMb: 0 }))
-        .rejects.toThrow('Storage limit must be a positive number');
+      await expect(createPlan('admin-1', { ...validPlanInput, storageLimitMb: 0 })).rejects.toThrow(
+        'Storage limit must be a positive number',
+      );
     });
 
     it('should throw if AI queries is zero', async () => {
-      await expect(createPlan('admin-1', { ...validPlanInput, aiQueriesPerDay: 0 }))
-        .rejects.toThrow('AI queries per day must be a positive number or -1 for unlimited');
+      await expect(
+        createPlan('admin-1', { ...validPlanInput, aiQueriesPerDay: 0 }),
+      ).rejects.toThrow('AI queries per day must be a positive number or -1 for unlimited');
     });
 
     it('should allow -1 for unlimited AI queries', async () => {
@@ -147,8 +178,9 @@ describe('Admin Service - Plan and Entitlement Management', () => {
     it('should throw if plan name already exists', async () => {
       mockQueryOne.mockResolvedValueOnce({ id: 'existing-plan' });
 
-      await expect(createPlan('admin-1', validPlanInput))
-        .rejects.toThrow("A plan with name 'premium' already exists");
+      await expect(createPlan('admin-1', validPlanInput)).rejects.toThrow(
+        "A plan with name 'premium' already exists",
+      );
     });
   });
 
@@ -197,54 +229,80 @@ describe('Admin Service - Plan and Entitlement Management', () => {
     it('should throw if plan not found', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
-      await expect(updatePlan('admin-1', 'nonexistent', { displayName: 'New Name' }))
-        .rejects.toThrow('Plan not found');
+      await expect(
+        updatePlan('admin-1', 'nonexistent', { displayName: 'New Name' }),
+      ).rejects.toThrow('Plan not found');
     });
 
     it('should throw if no changes provided', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-1', name: 'pro', display_name: 'Pro',
-        stripe_price_id: null, price_monthly_cents: 1999,
-        storage_limit_mb: 5120, ai_queries_per_day: 100,
-        is_active: true, created_at: new Date(), updated_at: new Date(),
+        id: 'plan-1',
+        name: 'pro',
+        display_name: 'Pro',
+        stripe_price_id: null,
+        price_monthly_cents: 1999,
+        storage_limit_mb: 5120,
+        ai_queries_per_day: 100,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
-      await expect(updatePlan('admin-1', 'plan-1', {}))
-        .rejects.toThrow('No changes provided');
+      await expect(updatePlan('admin-1', 'plan-1', {})).rejects.toThrow('No changes provided');
     });
 
     it('should throw if display name is empty string', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-1', name: 'pro', display_name: 'Pro',
-        stripe_price_id: null, price_monthly_cents: 1999,
-        storage_limit_mb: 5120, ai_queries_per_day: 100,
-        is_active: true, created_at: new Date(), updated_at: new Date(),
+        id: 'plan-1',
+        name: 'pro',
+        display_name: 'Pro',
+        stripe_price_id: null,
+        price_monthly_cents: 1999,
+        storage_limit_mb: 5120,
+        ai_queries_per_day: 100,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
-      await expect(updatePlan('admin-1', 'plan-1', { displayName: '  ' }))
-        .rejects.toThrow('Display name cannot be empty');
+      await expect(updatePlan('admin-1', 'plan-1', { displayName: '  ' })).rejects.toThrow(
+        'Display name cannot be empty',
+      );
     });
 
     it('should throw if price is negative', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-1', name: 'pro', display_name: 'Pro',
-        stripe_price_id: null, price_monthly_cents: 1999,
-        storage_limit_mb: 5120, ai_queries_per_day: 100,
-        is_active: true, created_at: new Date(), updated_at: new Date(),
+        id: 'plan-1',
+        name: 'pro',
+        display_name: 'Pro',
+        stripe_price_id: null,
+        price_monthly_cents: 1999,
+        storage_limit_mb: 5120,
+        ai_queries_per_day: 100,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
-      await expect(updatePlan('admin-1', 'plan-1', { priceMonthyCents: -50 }))
-        .rejects.toThrow('Price must be a non-negative number');
+      await expect(updatePlan('admin-1', 'plan-1', { priceMonthyCents: -50 })).rejects.toThrow(
+        'Price must be a non-negative number',
+      );
     });
   });
 
   describe('deactivatePlan', () => {
     it('should deactivate an active plan', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-1', name: 'old-plan', display_name: 'Old Plan',
-        stripe_price_id: null, price_monthly_cents: 999,
-        storage_limit_mb: 1024, ai_queries_per_day: 50,
-        is_active: true, created_at: new Date(), updated_at: new Date(),
+        id: 'plan-1',
+        name: 'old-plan',
+        display_name: 'Old Plan',
+        stripe_price_id: null,
+        price_monthly_cents: 999,
+        storage_limit_mb: 1024,
+        ai_queries_per_day: 50,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
       // Update query
       mockQueryOne.mockResolvedValueOnce(null);
@@ -257,20 +315,24 @@ describe('Admin Service - Plan and Entitlement Management', () => {
     it('should throw if plan not found', async () => {
       mockQueryOne.mockResolvedValueOnce(null);
 
-      await expect(deactivatePlan('admin-1', 'nonexistent'))
-        .rejects.toThrow('Plan not found');
+      await expect(deactivatePlan('admin-1', 'nonexistent')).rejects.toThrow('Plan not found');
     });
 
     it('should throw if plan already inactive', async () => {
       mockQueryOne.mockResolvedValueOnce({
-        id: 'plan-1', name: 'old-plan', display_name: 'Old Plan',
-        stripe_price_id: null, price_monthly_cents: 999,
-        storage_limit_mb: 1024, ai_queries_per_day: 50,
-        is_active: false, created_at: new Date(), updated_at: new Date(),
+        id: 'plan-1',
+        name: 'old-plan',
+        display_name: 'Old Plan',
+        stripe_price_id: null,
+        price_monthly_cents: 999,
+        storage_limit_mb: 1024,
+        ai_queries_per_day: 50,
+        is_active: false,
+        created_at: new Date(),
+        updated_at: new Date(),
       });
 
-      await expect(deactivatePlan('admin-1', 'plan-1'))
-        .rejects.toThrow('Plan is already inactive');
+      await expect(deactivatePlan('admin-1', 'plan-1')).rejects.toThrow('Plan is already inactive');
     });
   });
 
@@ -292,11 +354,11 @@ describe('Admin Service - Plan and Entitlement Management', () => {
       expect(mockInvalidateCache).toHaveBeenCalledWith('plan-1');
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO plan_entitlements'),
-        ['plan-1', 'input.sms', true]
+        ['plan-1', 'input.sms', true],
       );
       expect(mockQueryOne).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO plan_entitlements'),
-        ['plan-1', 'ai.categorization', false]
+        ['plan-1', 'ai.categorization', false],
       );
     });
 
@@ -306,15 +368,16 @@ describe('Admin Service - Plan and Entitlement Management', () => {
       await expect(
         setFeatureEntitlements('admin-1', 'nonexistent', [
           { featureKey: 'input.sms', enabled: true },
-        ])
+        ]),
       ).rejects.toThrow('Plan not found');
     });
 
     it('should throw if features array is empty', async () => {
       mockQueryOne.mockResolvedValueOnce({ id: 'plan-1', name: 'pro' });
 
-      await expect(setFeatureEntitlements('admin-1', 'plan-1', []))
-        .rejects.toThrow('At least one feature toggle is required');
+      await expect(setFeatureEntitlements('admin-1', 'plan-1', [])).rejects.toThrow(
+        'At least one feature toggle is required',
+      );
     });
 
     it('should throw if feature key is not registered', async () => {
@@ -323,7 +386,7 @@ describe('Admin Service - Plan and Entitlement Management', () => {
       await expect(
         setFeatureEntitlements('admin-1', 'plan-1', [
           { featureKey: 'nonexistent.feature', enabled: true },
-        ])
+        ]),
       ).rejects.toThrow("Feature 'nonexistent.feature' is not registered in the feature registry");
     });
 
@@ -333,7 +396,7 @@ describe('Admin Service - Plan and Entitlement Management', () => {
       await expect(
         setFeatureEntitlements('admin-1', 'plan-1', [
           { featureKey: 'input.sms', enabled: 'yes' as unknown as boolean },
-        ])
+        ]),
       ).rejects.toThrow("Feature 'input.sms' must have a boolean 'enabled' field");
     });
 
@@ -341,9 +404,7 @@ describe('Admin Service - Plan and Entitlement Management', () => {
       mockQueryOne.mockResolvedValueOnce({ id: 'plan-1', name: 'pro' });
 
       await expect(
-        setFeatureEntitlements('admin-1', 'plan-1', [
-          { featureKey: '', enabled: true },
-        ])
+        setFeatureEntitlements('admin-1', 'plan-1', [{ featureKey: '', enabled: true }]),
       ).rejects.toThrow('Each feature toggle must have a valid featureKey');
     });
   });
@@ -407,9 +468,7 @@ describe('Admin Service - Plan and Entitlement Management', () => {
     });
 
     it('should handle missing plan tiers in counts', async () => {
-      mockQueryMany.mockResolvedValueOnce([
-        { plan_name: 'free', count: '50' },
-      ]);
+      mockQueryMany.mockResolvedValueOnce([{ plan_name: 'free', count: '50' }]);
       mockQueryOne.mockResolvedValueOnce({ mrr: '0' });
       mockQueryOne.mockResolvedValueOnce({ cancelled_count: '0', total_active: '50' });
       mockQueryOne.mockResolvedValueOnce({ count: '0' });

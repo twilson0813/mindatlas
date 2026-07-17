@@ -25,10 +25,10 @@ describe('Property 1: Password Complexity Validation', () => {
       digitArb,
       specialArb,
       // Padding to reach at least 8 chars total (4 required + at least 4 more)
-      fc.array(
-        fc.oneof(uppercaseArb, lowercaseArb, digitArb, specialArb),
-        { minLength: 4, maxLength: 50 },
-      ),
+      fc.array(fc.oneof(uppercaseArb, lowercaseArb, digitArb, specialArb), {
+        minLength: 4,
+        maxLength: 50,
+      }),
     )
     .map(([upper, lower, digit, special, padding]) => {
       const chars = [upper, lower, digit, special, ...padding];
@@ -56,10 +56,10 @@ describe('Property 1: Password Complexity Validation', () => {
         // Build string of exactly 4-7 chars with all classes represented
         const base = [u, l, d, s];
         return fc
-          .array(
-            fc.oneof(uppercaseArb, lowercaseArb, digitArb, specialArb),
-            { minLength: 0, maxLength: 3 },
-          )
+          .array(fc.oneof(uppercaseArb, lowercaseArb, digitArb, specialArb), {
+            minLength: 0,
+            maxLength: 3,
+          })
           .map((extra) => {
             const chars = [...base, ...extra];
             // Simple shuffle using sort
@@ -84,7 +84,8 @@ describe('Property 1: Password Complexity Validation', () => {
       .array(fc.oneof(lowercaseArb, digitArb, specialArb), { minLength: 8, maxLength: 30 })
       .map((chars) => chars.join(''))
       .filter(
-        (pw) => /[a-z]/.test(pw) && /\d/.test(pw) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
+        (pw) =>
+          /[a-z]/.test(pw) && /\d/.test(pw) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
       );
 
     fc.assert(
@@ -103,7 +104,8 @@ describe('Property 1: Password Complexity Validation', () => {
       .array(fc.oneof(uppercaseArb, digitArb, specialArb), { minLength: 8, maxLength: 30 })
       .map((chars) => chars.join(''))
       .filter(
-        (pw) => /[A-Z]/.test(pw) && /\d/.test(pw) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
+        (pw) =>
+          /[A-Z]/.test(pw) && /\d/.test(pw) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
       );
 
     fc.assert(
@@ -123,7 +125,9 @@ describe('Property 1: Password Complexity Validation', () => {
       .map((chars) => chars.join(''))
       .filter(
         (pw) =>
-          /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
+          /[A-Z]/.test(pw) &&
+          /[a-z]/.test(pw) &&
+          /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pw),
       );
 
     fc.assert(

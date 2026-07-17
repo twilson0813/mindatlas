@@ -98,10 +98,7 @@ export const purgeDeletedItemsQueue = new Queue(QUEUE_NAMES.PURGE_DELETED_ITEMS,
   },
 });
 
-log.info(
-  { queues: Object.values(QUEUE_NAMES) },
-  'BullMQ queues initialized',
-);
+log.info({ queues: Object.values(QUEUE_NAMES) }, 'BullMQ queues initialized');
 
 /**
  * Gracefully close all queue connections.

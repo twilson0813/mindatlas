@@ -43,7 +43,7 @@ async function ensureUploadsDir(): Promise<void> {
 export async function storeFile(
   buffer: Buffer,
   originalFilename: string,
-  userId: string
+  userId: string,
 ): Promise<StoredFile> {
   await ensureUploadsDir();
 

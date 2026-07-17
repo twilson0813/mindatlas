@@ -16,13 +16,15 @@ export interface UsageMeterProps {
  * Displays progress bars with percentage and absolute values.
  */
 export function UsageMeter({ usage }: UsageMeterProps) {
-  const storagePercent = usage.storageLimitBytes > 0
-    ? Math.min((usage.storageUsedBytes / usage.storageLimitBytes) * 100, 100)
-    : 0;
+  const storagePercent =
+    usage.storageLimitBytes > 0
+      ? Math.min((usage.storageUsedBytes / usage.storageLimitBytes) * 100, 100)
+      : 0;
 
-  const aiPercent = usage.aiQueriesLimit > 0
-    ? Math.min((usage.aiQueriesUsed / usage.aiQueriesLimit) * 100, 100)
-    : 0;
+  const aiPercent =
+    usage.aiQueriesLimit > 0
+      ? Math.min((usage.aiQueriesUsed / usage.aiQueriesLimit) * 100, 100)
+      : 0;
 
   const isUnlimitedAi = usage.aiQueriesLimit === -1;
 

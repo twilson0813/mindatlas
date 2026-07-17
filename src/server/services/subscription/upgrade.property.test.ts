@@ -112,7 +112,7 @@ const PLANS: Record<string, PlanDefinition> = {
 const planUpgradeTransitionArb = fc.constantFrom(
   { from: PLANS.free, to: PLANS.pro },
   { from: PLANS.free, to: PLANS.enterprise },
-  { from: PLANS.pro, to: PLANS.enterprise }
+  { from: PLANS.pro, to: PLANS.enterprise },
 );
 
 const userIdArb = fc.uuid();
@@ -164,116 +164,112 @@ describe('Property 31: Plan Upgrade Immediate Activation', () => {
 
   it('should make all new plan features accessible immediately after upgrade', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        userIdArb,
-        planUpgradeTransitionArb,
-        async (userId, { from, to }) => {
-          // Reset mocks for each iteration
+      fc.asyncProperty(userIdArb, planUpgradeTransitionArb, async (userId, { from, to }) => {
+        // Reset mocks for each iteration
+        mockQueryOne.mockReset();
+        mockLoadEntitlements.mockReset();
+
+        // ── Step 1: Setup - user has an active subscription on the "from" plan ──
+
+        // upgradePlan: First query — find active subscription
+        mockQueryOne.mockResolvedValueOnce({
+          id: 'sub-1',
+          user_id: userId,
+          plan_id: from.id,
+          status: 'active',
+          stripe_subscription_id: 'sub_stripe_123',
+          stripe_customer_id: 'cus_stripe_123',
+          current_period_start: new Date(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          pending_plan_id: null,
+          canceled_at: null,
+        });
+
+        // upgradePlan: Second query — find the new plan
+        mockQueryOne.mockResolvedValueOnce({
+          id: to.id,
+          name: to.name,
+          display_name: to.name.charAt(0).toUpperCase() + to.name.slice(1),
+          stripe_price_id: `price_${to.name}`,
+          price_monthly_cents: to.name === 'pro' ? 1999 : 4999,
+          storage_limit_mb: to.name === 'pro' ? 5120 : 51200,
+          ai_queries_per_day: to.name === 'pro' ? 100 : -1,
+          is_active: true,
+        });
+
+        // upgradePlan: Third query — DB update returns updated subscription
+        mockQueryOne.mockResolvedValueOnce({
+          id: 'sub-1',
+          user_id: userId,
+          plan_id: to.id,
+          status: 'active',
+          stripe_subscription_id: 'sub_stripe_123',
+          stripe_customer_id: 'cus_stripe_123',
+          current_period_start: new Date(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          pending_plan_id: null,
+          canceled_at: null,
+        });
+
+        // ── Step 2: Perform the upgrade ──
+
+        const result = await upgradePlan(userId, to.id);
+
+        // Verify upgrade completed — plan changed immediately
+        expect(result.planId).toBe(to.id);
+        expect(result.planName).toBe(to.name);
+        expect(result.status).toBe('active');
+
+        // ── Step 3: Verify all new plan features are accessible immediately ──
+
+        // For each feature in the new plan, checkEntitlement should return allowed
+        for (const feature of to.features) {
           mockQueryOne.mockReset();
           mockLoadEntitlements.mockReset();
 
-          // ── Step 1: Setup - user has an active subscription on the "from" plan ──
-
-          // upgradePlan: First query — find active subscription
+          // checkEntitlement: query for active subscription (now on new plan)
           mockQueryOne.mockResolvedValueOnce({
-            id: 'sub-1',
-            user_id: userId,
-            plan_id: from.id,
-            status: 'active',
-            stripe_subscription_id: 'sub_stripe_123',
-            stripe_customer_id: 'cus_stripe_123',
-            current_period_start: new Date(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            pending_plan_id: null,
-            canceled_at: null,
-          });
-
-          // upgradePlan: Second query — find the new plan
-          mockQueryOne.mockResolvedValueOnce({
-            id: to.id,
-            name: to.name,
-            display_name: to.name.charAt(0).toUpperCase() + to.name.slice(1),
-            stripe_price_id: `price_${to.name}`,
-            price_monthly_cents: to.name === 'pro' ? 1999 : 4999,
-            storage_limit_mb: to.name === 'pro' ? 5120 : 51200,
-            ai_queries_per_day: to.name === 'pro' ? 100 : -1,
-            is_active: true,
-          });
-
-          // upgradePlan: Third query — DB update returns updated subscription
-          mockQueryOne.mockResolvedValueOnce({
-            id: 'sub-1',
-            user_id: userId,
             plan_id: to.id,
             status: 'active',
-            stripe_subscription_id: 'sub_stripe_123',
-            stripe_customer_id: 'cus_stripe_123',
-            current_period_start: new Date(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            pending_plan_id: null,
-            canceled_at: null,
           });
 
-          // ── Step 2: Perform the upgrade ──
+          // loadEntitlements: returns the new plan's features
+          mockLoadEntitlements.mockResolvedValueOnce(to.features);
 
-          const result = await upgradePlan(userId, to.id);
+          const entitlement = await checkEntitlement(userId, feature);
 
-          // Verify upgrade completed — plan changed immediately
-          expect(result.planId).toBe(to.id);
-          expect(result.planName).toBe(to.name);
-          expect(result.status).toBe('active');
-
-          // ── Step 3: Verify all new plan features are accessible immediately ──
-
-          // For each feature in the new plan, checkEntitlement should return allowed
-          for (const feature of to.features) {
-            mockQueryOne.mockReset();
-            mockLoadEntitlements.mockReset();
-
-            // checkEntitlement: query for active subscription (now on new plan)
-            mockQueryOne.mockResolvedValueOnce({
-              plan_id: to.id,
-              status: 'active',
-            });
-
-            // loadEntitlements: returns the new plan's features
-            mockLoadEntitlements.mockResolvedValueOnce(to.features);
-
-            const entitlement = await checkEntitlement(userId, feature);
-
-            // PROPERTY: Every feature in the new plan must be allowed immediately
-            expect(entitlement.allowed).toBe(true);
-            expect(entitlement.featureKey).toBe(feature);
-          }
-
-          // ── Step 4: Verify features exclusive to new plan (not in old plan) are now accessible ──
-
-          const newFeatures = to.features.filter((f) => !from.features.includes(f));
-
-          // At least some new features should exist for a valid upgrade
-          expect(newFeatures.length).toBeGreaterThan(0);
-
-          for (const newFeature of newFeatures) {
-            mockQueryOne.mockReset();
-            mockLoadEntitlements.mockReset();
-
-            // After upgrade, subscription is on new plan
-            mockQueryOne.mockResolvedValueOnce({
-              plan_id: to.id,
-              status: 'active',
-            });
-
-            // New plan's features include this feature
-            mockLoadEntitlements.mockResolvedValueOnce(to.features);
-
-            const entitlement = await checkEntitlement(userId, newFeature);
-
-            // PROPERTY: Features that were NOT in the old plan are now accessible
-            expect(entitlement.allowed).toBe(true);
-            expect(entitlement.reason).toBeUndefined();
-          }
+          // PROPERTY: Every feature in the new plan must be allowed immediately
+          expect(entitlement.allowed).toBe(true);
+          expect(entitlement.featureKey).toBe(feature);
         }
-      ),
+
+        // ── Step 4: Verify features exclusive to new plan (not in old plan) are now accessible ──
+
+        const newFeatures = to.features.filter((f) => !from.features.includes(f));
+
+        // At least some new features should exist for a valid upgrade
+        expect(newFeatures.length).toBeGreaterThan(0);
+
+        for (const newFeature of newFeatures) {
+          mockQueryOne.mockReset();
+          mockLoadEntitlements.mockReset();
+
+          // After upgrade, subscription is on new plan
+          mockQueryOne.mockResolvedValueOnce({
+            plan_id: to.id,
+            status: 'active',
+          });
+
+          // New plan's features include this feature
+          mockLoadEntitlements.mockResolvedValueOnce(to.features);
+
+          const entitlement = await checkEntitlement(userId, newFeature);
+
+          // PROPERTY: Features that were NOT in the old plan are now accessible
+          expect(entitlement.allowed).toBe(true);
+          expect(entitlement.reason).toBeUndefined();
+        }
+      }),
       { numRuns: 100 },
     );
   });

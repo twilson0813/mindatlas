@@ -21,7 +21,9 @@ describe('ItemCard', () => {
     render(<ItemCard item={baseItem} />);
 
     expect(screen.getByText('Test Article')).toBeInTheDocument();
-    expect(screen.getByText('This is a test snippet for the item card component')).toBeInTheDocument();
+    expect(
+      screen.getByText('This is a test snippet for the item card component'),
+    ).toBeInTheDocument();
     expect(screen.getByText('blog.example.com')).toBeInTheDocument();
   });
 
